@@ -1,0 +1,4 @@
+image: registry.comp30023/p1:latest
+test:
+  script:
+    - /test.sh
