@@ -1,9 +1,9 @@
 #include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <inttypes.h>
 #include <sys/types.h>
 
 #define SEPARATOR " "
@@ -103,14 +103,16 @@ void simulate(args_t args) {
         memory method, and quantum, run the simulation.
     */
     if (DEBUG) {
-        printf("Running simulation with the following arguments:\n");
+        printf("ACTION: Running simulation with the following arguments...\n");
         printf("File: %s\n", args.file);
         printf("Scheduler: %s\n", args.scheduler);
         printf("Memory: %s\n", args.memory);
         printf("Quantum: %s\n", args.quantum);
     }
 
-    // read in file
+    if (DEBUG) {
+        printf("ACTION: Reading in file...\n");
+    }
     FILE *fp = fopen(args.file, "r");
     assert(fp);
 
@@ -122,7 +124,10 @@ void simulate(args_t args) {
         pcb_t pcb = parse_pcb_line(line);
 
         if (DEBUG) {
-            printf("Name: %s, Arrival Time: %" PRIu32 ", Service Time: %" PRIu32 ", Memory Size: %" PRIu16 "\n", pcb.name, pcb.arrival_time, pcb.service_time, pcb.memory_size);
+            printf("name: %s, arrive: %" PRIu32 "s, service: %" PRIu32
+                   "s, mem: %" PRIu16 "MB\n",
+                   pcb.name, pcb.arrival_time, pcb.service_time,
+                   pcb.memory_size);
         }
     }
 
@@ -138,18 +143,18 @@ void simulate(args_t args) {
 pcb_t parse_pcb_line(char *line) {
     /*  Given a line from the input file, parse it and return a pcb_t
         struct.
-        
+
         The line should be in the format:
         <arrival time> <name> <service time> <memory size>
     */
     pcb_t pcb;
     char *token = strtok(line, SEPARATOR);
-    pcb.arrival_time = (uint32_t) strtoul(token, NULL, 10);
+    pcb.arrival_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
     pcb.name = token;
     token = strtok(NULL, SEPARATOR);
-    pcb.service_time = (uint32_t) strtoul(token, NULL, 10);
+    pcb.service_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
-    pcb.memory_size = (uint16_t) strtoul(token, NULL, 10);
+    pcb.memory_size = (uint16_t)strtoul(token, NULL, 10);
     return pcb;
 }
