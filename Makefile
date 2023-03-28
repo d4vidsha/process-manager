@@ -5,3 +5,6 @@ $(EXE): main.c
 
 format:
 	clang-format -style=file -i *.c
+
+clean:
+	rm -f $(EXE)
