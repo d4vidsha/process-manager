@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
+#include <sys/types.h>
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
 const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
@@ -15,10 +17,18 @@ typedef struct args {
     char *quantum;
 } args_t;
 
+typedef struct process_control_block {
+    char *name;
+    uint32_t arrival_time;
+    uint32_t service_time;
+    uint16_t memory_size;
+} pcb_t;
+
 char *read_flag(char *flag, const char *const *valid_args, int argc,
                 char *argv[]);
 args_t parse_args(int argc, char *argv[]);
 void simulate(args_t args);
+pcb_t parse_pcb_line(char *line);
 
 int main(int argc, char *argv[]) {
 
@@ -99,6 +109,40 @@ void simulate(args_t args) {
     FILE *fp = fopen(args.file, "r");
     assert(fp);
 
-    
+    // for each line in the file, parse it and add it to the priority queue
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    while ((read = getline(&line, &len, fp)) != -1) {
+        pcb_t pcb = parse_pcb_line(line);
+        printf("Name: %s, Arrival Time: %" PRIu32 ", Service Time: %" PRIu32 ", Memory Size: %" PRIu16 "\n", pcb.name, pcb.arrival_time, pcb.service_time, pcb.memory_size);
 
+    }
+
+    // free line if necessary
+    if (line) {
+        free(line);
+    }
+
+    // close file
+    fclose(fp);
+}
+
+pcb_t parse_pcb_line(char *line) {
+    /*  Given a line from the input file, parse it and return a pcb_t
+        struct.
+        
+        The line should be in the format:
+        <arrival time> <name> <service time> <memory size>
+    */
+    pcb_t pcb;
+    char *token = strtok(line, " ");
+    pcb.arrival_time = (uint32_t) strtoul(token, NULL, 10);
+    token = strtok(NULL, " ");
+    pcb.name = token;
+    token = strtok(NULL, " ");
+    pcb.service_time = (uint32_t) strtoul(token, NULL, 10);
+    token = strtok(NULL, " ");
+    pcb.memory_size = (uint16_t) strtoul(token, NULL, 10);
+    return pcb;
 }
