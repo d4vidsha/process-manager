@@ -6,6 +6,8 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#define SEPARATOR " "
+
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
 const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
 const char *const QUANTUMS[] = {"1", "2", "3", NULL};
@@ -136,13 +138,13 @@ pcb_t parse_pcb_line(char *line) {
         <arrival time> <name> <service time> <memory size>
     */
     pcb_t pcb;
-    char *token = strtok(line, " ");
+    char *token = strtok(line, SEPARATOR);
     pcb.arrival_time = (uint32_t) strtoul(token, NULL, 10);
-    token = strtok(NULL, " ");
+    token = strtok(NULL, SEPARATOR);
     pcb.name = token;
-    token = strtok(NULL, " ");
+    token = strtok(NULL, SEPARATOR);
     pcb.service_time = (uint32_t) strtoul(token, NULL, 10);
-    token = strtok(NULL, " ");
+    token = strtok(NULL, SEPARATOR);
     pcb.memory_size = (uint16_t) strtoul(token, NULL, 10);
     return pcb;
 }
