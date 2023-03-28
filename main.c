@@ -30,7 +30,7 @@ typedef struct process_control_block {
 char *read_flag(char *flag, const char *const *valid_args, int argc,
                 char *argv[]);
 args_t parse_args(int argc, char *argv[]);
-void simulate(args_t args);
+void simulation(args_t args);
 pcb_t parse_pcb_line(char *line);
 
 int main(int argc, char *argv[]) {
@@ -43,9 +43,64 @@ int main(int argc, char *argv[]) {
     assert(args.quantum != NULL);
 
     // run simulation
-    simulate(args);
+    simulation(args);
 
     return 0;
+}
+
+void simulation(args_t args) {
+    /*  Given a struct of arguments that contains the file, scheduler,
+        memory method, and quantum, run the simulation.
+    */
+    if (DEBUG) {
+        printf("ACTION: Running simulation with the following arguments...\n");
+        printf("File: %s\n", args.file);
+        printf("Scheduler: %s\n", args.scheduler);
+        printf("Memory: %s\n", args.memory);
+        printf("Quantum: %s\n", args.quantum);
+    }
+
+    // read in file
+    if (DEBUG) {
+        printf("ACTION: Reading in file...\n");
+    }
+    FILE *fp = fopen(args.file, "r");
+    assert(fp);
+
+    // for each line in the file, parse it and add it to the priority queue
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    while ((read = getline(&line, &len, fp)) != -1) {
+        pcb_t pcb = parse_pcb_line(line);
+
+        if (DEBUG) {
+            printf("name: %s, arrive: %" PRIu32 "s, service: %" PRIu32
+                   "s, mem: %" PRIu16 "MB\n",
+                   pcb.name, pcb.arrival_time, pcb.service_time,
+                   pcb.memory_size);
+        }
+
+        
+    }
+
+    int simulation_time = 0;
+    int cycles = 0;
+
+
+    // free line if necessary
+    if (line) {
+        free(line);
+    }
+
+    // close file
+    fclose(fp);
+}
+
+void cycle_tasks() {
+    /*  Run one cycle.
+    */
+
 }
 
 char *read_flag(char *flag, const char *const *valid_args, int argc,
@@ -96,48 +151,6 @@ args_t parse_args(int argc, char *argv[]) {
     args.memory = read_flag("-m", MEMORY_METHODS, argc, argv);
     args.quantum = read_flag("-q", QUANTUMS, argc, argv);
     return args;
-}
-
-void simulate(args_t args) {
-    /*  Given a struct of arguments that contains the file, scheduler,
-        memory method, and quantum, run the simulation.
-    */
-    if (DEBUG) {
-        printf("ACTION: Running simulation with the following arguments...\n");
-        printf("File: %s\n", args.file);
-        printf("Scheduler: %s\n", args.scheduler);
-        printf("Memory: %s\n", args.memory);
-        printf("Quantum: %s\n", args.quantum);
-    }
-
-    if (DEBUG) {
-        printf("ACTION: Reading in file...\n");
-    }
-    FILE *fp = fopen(args.file, "r");
-    assert(fp);
-
-    // for each line in the file, parse it and add it to the priority queue
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    while ((read = getline(&line, &len, fp)) != -1) {
-        pcb_t pcb = parse_pcb_line(line);
-
-        if (DEBUG) {
-            printf("name: %s, arrive: %" PRIu32 "s, service: %" PRIu32
-                   "s, mem: %" PRIu16 "MB\n",
-                   pcb.name, pcb.arrival_time, pcb.service_time,
-                   pcb.memory_size);
-        }
-    }
-
-    // free line if necessary
-    if (line) {
-        free(line);
-    }
-
-    // close file
-    fclose(fp);
 }
 
 pcb_t parse_pcb_line(char *line) {
