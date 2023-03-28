@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #define SEPARATOR " "
+#define DEBUG 1
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
 const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
@@ -101,11 +102,13 @@ void simulate(args_t args) {
     /*  Given a struct of arguments that contains the file, scheduler,
         memory method, and quantum, run the simulation.
     */
-    printf("Running simulation with the following arguments:\n");
-    printf("File: %s\n", args.file);
-    printf("Scheduler: %s\n", args.scheduler);
-    printf("Memory: %s\n", args.memory);
-    printf("Quantum: %s\n", args.quantum);
+    if (DEBUG) {
+        printf("Running simulation with the following arguments:\n");
+        printf("File: %s\n", args.file);
+        printf("Scheduler: %s\n", args.scheduler);
+        printf("Memory: %s\n", args.memory);
+        printf("Quantum: %s\n", args.quantum);
+    }
 
     // read in file
     FILE *fp = fopen(args.file, "r");
@@ -117,8 +120,10 @@ void simulate(args_t args) {
     ssize_t read;
     while ((read = getline(&line, &len, fp)) != -1) {
         pcb_t pcb = parse_pcb_line(line);
-        printf("Name: %s, Arrival Time: %" PRIu32 ", Service Time: %" PRIu32 ", Memory Size: %" PRIu16 "\n", pcb.name, pcb.arrival_time, pcb.service_time, pcb.memory_size);
 
+        if (DEBUG) {
+            printf("Name: %s, Arrival Time: %" PRIu32 ", Service Time: %" PRIu32 ", Memory Size: %" PRIu16 "\n", pcb.name, pcb.arrival_time, pcb.service_time, pcb.memory_size);
+        }
     }
 
     // free line if necessary
