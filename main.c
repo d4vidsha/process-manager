@@ -97,22 +97,15 @@ void process_manager(args_t *args) {
 
         // if current running process (if any) has completed, terminate it and
         // deallocate its memory
-        if (is_empty_list(ready_queue) == FALSE) {
-            // terminate process if it has finished
-            node_t *curr = ready_queue->head;
-            node_t *next = NULL;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                next = curr->next;
-                pcb->service_time -= quantum;
-                if (pcb->service_time <= 0) {
-                    pcb->state = FINISHED;
-                    move_data(pcb, ready_queue, finished_queue);
-                    printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
-                           simulation_time, pcb->name,
-                           list_len(ready_queue) + list_len(input_queue));
-                }
-                curr = next;
+        if (!is_empty_list(running_queue)) {
+            pcb_t *pcb = (pcb_t *)running_queue->head->data;
+            printf("TEST: %d\n", pcb->service_time);
+            if (pcb->service_time <= 0) {
+                pcb->state = FINISHED;
+                move_data(pcb, running_queue, finished_queue);
+                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
+                       simulation_time, pcb->name,
+                       list_len(ready_queue) + list_len(input_queue));
             }
         }
 
@@ -182,6 +175,8 @@ void process_manager(args_t *args) {
             }
         }
 
+        simulation_time += quantum;
+
         // print submitted queue
         if (DEBUG) {
             printf("Submitted queue: ");
@@ -215,9 +210,29 @@ void process_manager(args_t *args) {
                 curr = curr->next;
             }
             printf("\n");
-        }
 
-        simulation_time += quantum;
+            // print running queue
+            printf("  Running queue: ");
+            curr = running_queue->head;
+            while (curr) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+                assert(pcb->state == RUNNING);
+                printf("%s ", pcb->name);
+                curr = curr->next;
+            }
+            printf("\n");
+
+            // print finished queue
+            printf(" Finished queue: ");
+            curr = finished_queue->head;
+            while (curr) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+                assert(pcb->state == FINISHED);
+                printf("%s ", pcb->name);
+                curr = curr->next;
+            }
+            printf("\n");
+        }
     }
 
     // free linked lists
