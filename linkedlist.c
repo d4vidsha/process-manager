@@ -6,7 +6,7 @@
 
 list_t *create_empty_list() {
     /*  Creates an empty linked list.
-    */
+     */
     list_t *list;
     list = (list_t *)malloc(sizeof(*list));
     assert(list);
@@ -16,7 +16,7 @@ list_t *create_empty_list() {
 
 list_t *create_list(node_t *head, node_t *foot) {
     /*  Create a linked list given the head and foot.
-    */
+     */
     assert(head && foot);
     list_t *new = create_empty_list();
     new->head = head;
@@ -26,33 +26,35 @@ list_t *create_list(node_t *head, node_t *foot) {
 
 int is_empty_list(list_t *list) {
     /*  Checks if list is empty.
-    */
+     */
     assert(list);
     return list->head == NULL;
 }
 
-void free_list(list_t *list) {
+void free_list(list_t *list, void (*free_data)(void *data)) {
     /*  Free the list by freeing all nodes and its contents.
-    */
+        Give a function pointer to free the data.
+     */
     assert(list);
     node_t *curr, *prev;
     curr = list->head;
     while (curr) {
         prev = curr;
         curr = curr->next;
+        free_data(prev->data);
         free(prev);
     }
     free(list);
 }
 
-list_t *prepend(list_t *list, pcb_t *pcb) {
+list_t *prepend(list_t *list, void *data) {
     /*  Prepend to the list i.e. add to head of linked list.
-    */
-    assert(list && pcb);
+     */
+    assert(list && data);
     node_t *new;
     new = (node_t *)malloc(sizeof(*new));
     assert(new);
-    new->pcb = pcb;
+    new->data = data;
     new->next = list->head;
     list->head = new;
     if (list->foot == NULL) {
@@ -62,14 +64,14 @@ list_t *prepend(list_t *list, pcb_t *pcb) {
     return list;
 }
 
-list_t *append(list_t *list, pcb_t *pcb) {
+list_t *append(list_t *list, void *data) {
     /*  Append to the list i.e. add to foot of linked list.
-    */
-    assert(list && pcb);
+     */
+    assert(list && data);
     node_t *new;
     new = (node_t *)malloc(sizeof(*new));
     assert(new);
-    new->pcb = pcb;
+    new->data = data;
     new->next = NULL;
     if (list->foot == NULL) {
         /* this is the first insert into list */
@@ -83,7 +85,7 @@ list_t *append(list_t *list, pcb_t *pcb) {
 
 int list_len(list_t *list) {
     /*  Get the linked list length.
-    */
+     */
     assert(list);
     int len = 0;
     node_t *curr;
@@ -93,6 +95,50 @@ int list_len(list_t *list) {
         curr = curr->next;
     }
     return len;
+}
+
+void *remove_data(list_t *list, void *data) {
+    /*  Remove data from the list. If data is not in the list, return NULL.
+     */
+    assert(list && data);
+    node_t *curr, *prev;
+    curr = list->head;
+    prev = NULL;
+    while (curr) {
+        if (curr->data == data) {
+            if (prev == NULL) {
+                /* removing the first node in the list */
+                list->head = curr->next;
+                if (list->foot == curr) {
+                    /* also removing the last node in the list */
+                    list->foot = NULL;
+                }
+            } else {
+                /* removing a node in the middle or end of the list */
+                prev->next = curr->next;
+                if (list->foot == curr) {
+                    /* also removing the last node in the list */
+                    list->foot = prev;
+                }
+            }
+            free(curr);
+            return data;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+void *move_data(void *data, list_t *from, list_t *to) {
+    /*  Move data from one list to another.
+     */
+    assert(data && from && to);
+    void *removed = remove_data(from, data);
+    if (removed) {
+        append(to, removed);
+    }
+    return removed;
 }
 
 /* =============================================================================
