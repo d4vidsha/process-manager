@@ -2,17 +2,11 @@
 #define _MAIN_H_
 
 /* #includes ================================================================ */
-#include <stdlib.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 /* constants ================================================================ */
-
 #define SEPARATOR " "
 #define DEBUG 1
-
-const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
-const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
-const char *const QUANTUMS[] = {"1", "2", "3", NULL};
 
 /* structures =============================================================== */
 typedef struct args {

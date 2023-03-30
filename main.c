@@ -4,7 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include "main.h"
+#include "linkedlist.h"
+
+const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
+const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
+const char *const QUANTUMS[] = {"1", "2", "3", NULL};
 
 int main(int argc, char *argv[]) {
 
@@ -40,7 +46,8 @@ void simulation(args_t args) {
     FILE *fp = fopen(args.file, "r");
     assert(fp);
 
-    // for each line in the file, parse it and add it to the priority queue
+    // for each line in the file, parse it and add it to a linked list
+    list_t *pcbs = create_empty_list();
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -53,10 +60,13 @@ void simulation(args_t args) {
                    pcb.name, pcb.arrival_time, pcb.service_time,
                    pcb.memory_size);
         }
+
+        // add to linked list
+        pcbs = append(pcbs, &pcb);
     }
 
-    int simulation_time = 0;
-    int cycles = 0;
+    // int simulation_time = 0;
+    // int cycles = 0;
 
     // free line if necessary
     if (line) {
@@ -65,6 +75,10 @@ void simulation(args_t args) {
 
     // close file
     fclose(fp);
+
+    if (DEBUG) {
+        printf("Number of processes in linked list: %d\n", list_len(pcbs));
+    }
 }
 
 void cycle_tasks() {

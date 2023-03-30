@@ -5,7 +5,7 @@ CFLAGS = -Wall -g
 LDLIBS = 
 
 # define sets of source files and object files
-SRC = main.c
+SRC = main.c linkedlist.c
 # OBJ is the same as SRC, just replace .c with .o
 OBJ = $(SRC:.c=.o)
 
