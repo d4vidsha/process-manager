@@ -4,34 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-
-#define SEPARATOR " "
-#define DEBUG 1
-
-const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
-const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
-const char *const QUANTUMS[] = {"1", "2", "3", NULL};
-
-typedef struct args {
-    char *file;
-    char *scheduler;
-    char *memory;
-    char *quantum;
-} args_t;
-
-typedef struct process_control_block {
-    char *name;
-    uint32_t arrival_time;
-    uint32_t service_time;
-    uint16_t memory_size;
-} pcb_t;
-
-char *read_flag(char *flag, const char *const *valid_args, int argc,
-                char *argv[]);
-args_t parse_args(int argc, char *argv[]);
-void simulation(args_t args);
-pcb_t parse_pcb_line(char *line);
+#include "main.h"
 
 int main(int argc, char *argv[]) {
 
@@ -80,13 +53,10 @@ void simulation(args_t args) {
                    pcb.name, pcb.arrival_time, pcb.service_time,
                    pcb.memory_size);
         }
-
-        
     }
 
     int simulation_time = 0;
     int cycles = 0;
-
 
     // free line if necessary
     if (line) {
@@ -99,8 +69,7 @@ void simulation(args_t args) {
 
 void cycle_tasks() {
     /*  Run one cycle.
-    */
-
+     */
 }
 
 char *read_flag(char *flag, const char *const *valid_args, int argc,
@@ -171,3 +140,7 @@ pcb_t parse_pcb_line(char *line) {
     pcb.memory_size = (uint16_t)strtoul(token, NULL, 10);
     return pcb;
 }
+
+/* =============================================================================
+   Written by David Sha.
+============================================================================= */
