@@ -16,35 +16,36 @@ const char *const QUANTUMS[] = {"1", "2", "3", NULL};
 int main(int argc, char *argv[]) {
 
     // read in flags and arguments
-    args_t args = parse_args(argc, argv);
-    assert(args.file != NULL);
-    assert(args.scheduler != NULL);
-    assert(args.memory != NULL);
-    assert(args.quantum != NULL);
+    args_t *args = parse_args(argc, argv);
+    assert(args->file != NULL);
+    assert(args->scheduler != NULL);
+    assert(args->memory != NULL);
+    assert(args->quantum != NULL);
 
     // run simulation
     process_manager(args);
 
+    free(args);
     return 0;
 }
 
-void process_manager(args_t args) {
+void process_manager(args_t *args) {
     /*  Given a struct of arguments that contains the file, scheduler,
         memory method, and quantum, run the simulation.
     */
     if (DEBUG) {
         printf("ACTION: Running simulation with the following arguments...\n");
-        printf("File: %s\n", args.file);
-        printf("Scheduler: %s\n", args.scheduler);
-        printf("Memory: %s\n", args.memory);
-        printf("Quantum: %s\n", args.quantum);
+        printf("File: %s\n", args->file);
+        printf("Scheduler: %s\n", args->scheduler);
+        printf("Memory: %s\n", args->memory);
+        printf("Quantum: %s\n", args->quantum);
     }
 
     // read in file
     if (DEBUG) {
         printf("ACTION: Reading in file...\n");
     }
-    FILE *fp = fopen(args.file, "r");
+    FILE *fp = fopen(args->file, "r");
     assert(fp);
 
     // for each line in the file, parse it and add it to a linked list
@@ -57,14 +58,17 @@ void process_manager(args_t args) {
         append(submitted_pcbs, pcb);
     }
 
-    node_t *curr = submitted_pcbs->head;
-    while (curr) {
-        pcb_t *pcb = (pcb_t *)curr->data;
-        printf("name: %s, arrive: %" PRIu32 "s, service: %" PRIu32
-               "s, mem: %" PRIu16 "MB, state: %d\n",
-               pcb->name, pcb->arrival_time, pcb->service_time,
-               pcb->memory_size, pcb->state);
-        curr = curr->next;
+    // print submitted queue
+    if (DEBUG) {
+        node_t *curr = submitted_pcbs->head;
+        while (curr) {
+            pcb_t *pcb = (pcb_t *)curr->data;
+            printf("name: %s, arrive: %" PRIu32 "s, service: %" PRIu32
+                "s, mem: %" PRIu16 "MB, state: %d\n",
+                pcb->name, pcb->arrival_time, pcb->service_time,
+                pcb->memory_size, pcb->state);
+            curr = curr->next;
+        }
     }
 
     // free line if necessary
@@ -82,10 +86,12 @@ void process_manager(args_t args) {
 
     list_t *input_queue = create_empty_list();
     list_t *ready_queue = create_empty_list();
-    int quantum = atoi(args.quantum);
+    int quantum = atoi(args->quantum);
     int simulation_time = 0;
     while (is_empty_list(submitted_pcbs) == FALSE) {
-        printf("Simulation time: %d\n", simulation_time);
+        if (DEBUG) {
+            printf("%d\n", simulation_time);
+        }
 
         // update the state of each process in the system
         node_t *curr;
@@ -117,31 +123,34 @@ void process_manager(args_t args) {
         }
 
         // print submitted queue
-        printf("Submitted queue: ");
-        curr = submitted_pcbs->head;
-        while (curr) {
-            pcb_t *pcb = (pcb_t *)curr->data;
-            // assert(pcb->name != NULL);
-            // assert(pcb->state == READY);
-            printf("%s ", pcb->name);
-            curr = curr->next;
+        if (DEBUG) {
+            printf("Submitted queue: ");
+            curr = submitted_pcbs->head;
+            while (curr) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+                assert(pcb->state == NEW);
+                printf("%s ", pcb->name);
+                curr = curr->next;
+            }
+            printf("\n");
         }
-        printf("\n");
 
         // print input queue
-        printf("Input queue: ");
-        curr = input_queue->head;
-        while (curr) {
-            pcb_t *pcb = (pcb_t *)curr->data;
-            assert(pcb->name != NULL);
-            assert(pcb->state == READY);
-            printf("%s ", pcb->name);
-            curr = curr->next;
+        if (DEBUG) {
+            printf("    Input queue: ");
+            curr = input_queue->head;
+            while (curr) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+                assert(pcb->state == READY);
+                printf("%s ", pcb->name);
+                curr = curr->next;
+            }
+            printf("\n");
         }
-        printf("\n");
 
-        // // run one cycle
-        // cycle_tasks();
+
+        // run one cycle
+        // cycle_tasks(NULL, input_queue, ready_queue);
 
         simulation_time += quantum;
 
@@ -222,15 +231,16 @@ char *read_flag(char *flag, const char *const *valid_args, int argc,
     return NULL;
 }
 
-args_t parse_args(int argc, char *argv[]) {
+args_t *parse_args(int argc, char *argv[]) {
     /*  Given a list of arguments, parse them and return all flags and
         arguments in a struct.
     */
-    args_t args;
-    args.file = read_flag("-f", NULL, argc, argv);
-    args.scheduler = read_flag("-s", SCHEDULERS, argc, argv);
-    args.memory = read_flag("-m", MEMORY_METHODS, argc, argv);
-    args.quantum = read_flag("-q", QUANTUMS, argc, argv);
+    args_t *args;
+    args = (args_t *)malloc(sizeof(*args));
+    args->file = read_flag("-f", NULL, argc, argv);
+    args->scheduler = read_flag("-s", SCHEDULERS, argc, argv);
+    args->memory = read_flag("-m", MEMORY_METHODS, argc, argv);
+    args->quantum = read_flag("-q", QUANTUMS, argc, argv);
     return args;
 }
 

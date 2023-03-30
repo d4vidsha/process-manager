@@ -27,8 +27,8 @@ typedef struct process_control_block {
 /* function prototypes ====================================================== */
 char *read_flag(char *flag, const char *const *valid_args, int argc,
                 char *argv[]);
-args_t parse_args(int argc, char *argv[]);
-void process_manager(args_t args);
+args_t *parse_args(int argc, char *argv[]);
+void process_manager(args_t *args);
 pcb_t *parse_pcb_line(char *line);
 void cycle_tasks();
 void free_pcb(void *data);
