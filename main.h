@@ -6,7 +6,7 @@
 
 /* constants ================================================================ */
 #define SEPARATOR " "
-#define DEBUG 1
+#define DEBUG 0
 
 /* structures =============================================================== */
 typedef struct args {
@@ -30,7 +30,6 @@ char *read_flag(char *flag, const char *const *valid_args, int argc,
 args_t *parse_args(int argc, char *argv[]);
 void process_manager(args_t *args);
 pcb_t *parse_pcb_line(char *line);
-void cycle_tasks();
 void free_pcb(void *data);
 
 #endif
