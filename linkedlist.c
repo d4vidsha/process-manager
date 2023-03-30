@@ -141,6 +141,24 @@ void *move_data(void *data, list_t *from, list_t *to) {
     return removed;
 }
 
+void *pop(list_t *list) {
+    /*  Pop from the head of list.
+     */
+    assert(list);
+    node_t *head = list->head;
+    if (head) {
+        list->head = head->next;
+        if (list->foot == head) {
+            /* also removing the last node in the list */
+            list->foot = NULL;
+        }
+        void *data = head->data;
+        free(head);
+        return data;
+    }
+    return NULL;
+}
+
 /* =============================================================================
    Written by David Sha.
    - Originally written for COMP20003 Assignment 2, 2022, altered to fit
