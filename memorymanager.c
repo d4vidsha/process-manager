@@ -24,11 +24,19 @@ list_t *mm_init(uint16_t size) {
     return memory;
 }
 
-void mm_malloc(list_t *memory, uint16_t size) {
+void *mm_malloc(list_t *memory, uint16_t size) {
+    /*  Allocate memory of size `size` to the process.
+        The memory manager will find the best fit block and allocate it.
+        If there is no free block that can fit the process, return NULL.
+    */
     // TO DO: implement this function
 }
 
 void mm_free(list_t *memory, uint16_t location) {
+    /*  Free the memory block at `location`.
+        The memory manager will merge the block with its adjacent free blocks.
+        If the block is already free, do nothing.
+     */
     // TO DO: implement this function
 }
 
