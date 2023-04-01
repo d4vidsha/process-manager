@@ -2,17 +2,15 @@
 #define _LINKEDLIST_H_
 
 /* structures =============================================================== */
-typedef struct node node_t;
-struct node {
+typedef struct node {
     void *data;
     node_t *next;
-};
+} node_t;
 
-typedef struct list list_t;
-struct list {
+typedef struct list {
     node_t *head;
     node_t *foot;
-};
+} list_t;
 
 /* function prototypes ====================================================== */
 list_t *create_empty_list();
