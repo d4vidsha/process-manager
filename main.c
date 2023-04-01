@@ -232,7 +232,33 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                 }
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
-            // TO DO: implement RR scheduling
+            // if there are no processes in the ready queue, the process
+            // that is currently running continues to run
+            if (ready_queue->head == NULL) {
+                // do nothing, let the process continue to run
+            } else {
+                // if there is a process currently running, suspend and add it 
+                // to the end of the ready queue, assuming only one running
+                // process exists at a time
+                if (running_queue->head != NULL) {
+                    pcb_t *pcb = (pcb_t *)running_queue->head->data;
+                    if (DEBUG) {
+                        printf("ACTION: Suspending process %s\n", pcb->name);
+                    }
+                    move_data(pcb, running_queue, ready_queue);
+                }
+
+                // the process at the head of ready queue is chosen to run for 
+                // one quantum                
+                pcb_t *pcb = (pcb_t *)ready_queue->head->data;
+                if (DEBUG) {
+                    printf("ACTION: Adding process %s to running queue\n",
+                            pcb->name);
+                }
+                printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
+                        simulation_time, pcb->name, pcb->service_time);
+                move_data(pcb, ready_queue, running_queue);
+            }
         }
 
         // when the finished queue contains all processes, the process manager
