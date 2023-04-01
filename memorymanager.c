@@ -30,6 +30,7 @@ void *mm_malloc(list_t *memory, uint16_t size) {
         If there is no free block that can fit the process, return NULL.
     */
     // TO DO: implement this function
+    return NULL;
 }
 
 void mm_free(list_t *memory, uint16_t location) {
