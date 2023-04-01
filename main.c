@@ -66,9 +66,9 @@ void process_manager(args_t *args) {
         while (curr) {
             pcb_t *pcb = (pcb_t *)curr->data;
             printf("%s, arrive: %" PRIu32 "s, service: %" PRIu32
-                   "s, mem: %" PRIu16 "MB, state: %d\n",
+                   "s, mem: %" PRIu16 "MB\n",
                    pcb->name, pcb->arrival_time, pcb->service_time,
-                   pcb->memory_size, pcb->state);
+                   pcb->memory_size);
             curr = curr->next;
         }
     }
@@ -126,7 +126,9 @@ void process_manager(args_t *args) {
                 if (DEBUG) {
                     printf("ACTION: Terminating process %s\n", pcb->name);
                 }
-                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n", simulation_time, pcb->name, list_len(input_queue) + list_len(ready_queue));
+                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
+                       simulation_time, pcb->name,
+                       list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
             } else {
                 break;
@@ -193,10 +195,11 @@ void process_manager(args_t *args) {
         // that has been previously running, or a ready process which
         // has not been previously running
 
-        // only add a process to the running queue if there is no process
         if (running_queue->head == NULL) {
-
+            // add a process to running queue if there is no running process
             if (strcmp(args->scheduler, "SJF") == 0) {
+
+                // find the process with the shortest service time
                 node_t *curr = ready_queue->head;
                 node_t *min = curr;
                 while (curr) {
@@ -207,13 +210,17 @@ void process_manager(args_t *args) {
                     }
                     curr = curr->next;
                 }
+
+                // provided there exists a process with the shortest service
+                // time, add it to the running queue
                 if (min) {
                     pcb_t *pcb = (pcb_t *)min->data;
                     if (DEBUG) {
                         printf("ACTION: Adding process %s to running queue\n",
                                pcb->name);
                     }
-                    printf("%d,RUNNING,process_name=%s,remaining_time=%d\n", simulation_time, pcb->name, pcb->service_time);
+                    printf("%d,RUNNING,process_name=%s,remaining_time=%d\n",
+                           simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
                 }
             } else if (strcmp(args->scheduler, "RR") == 0) {
@@ -304,7 +311,6 @@ pcb_t *parse_pcb_line(char *line) {
     pcb->service_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
     pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
-    pcb->state = NEW;
     return pcb;
 }
 
