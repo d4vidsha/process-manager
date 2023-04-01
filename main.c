@@ -115,7 +115,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                 pcb->service_time = 0;
             } else {
                 pcb->service_time -= quantum;
-            }            
+            }
 
             if (pcb->service_time == 0) {
                 if (DEBUG) {
@@ -197,7 +197,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
             // time, choose the process whose name comes first
             // lexicographically
             if (running_queue->head == NULL) {
-                // only add a process to running queue if there is no 
+                // only add a process to running queue if there is no
                 // running process
                 node_t *curr = ready_queue->head;
                 node_t *min = curr;
@@ -224,10 +224,11 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                     pcb_t *pcb = (pcb_t *)min->data;
                     if (DEBUG) {
                         printf("ACTION: Adding process %s to running queue\n",
-                                pcb->name);
+                               pcb->name);
                     }
-                    printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
-                            simulation_time, pcb->name, pcb->service_time);
+                    printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32
+                           "\n",
+                           simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
                 }
             }
@@ -237,7 +238,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
             if (ready_queue->head == NULL) {
                 // do nothing, let the process continue to run
             } else {
-                // if there is a process currently running, suspend and add it 
+                // if there is a process currently running, suspend and add it
                 // to the end of the ready queue, assuming only one running
                 // process exists at a time
                 if (running_queue->head != NULL) {
@@ -248,15 +249,16 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                     move_data(pcb, running_queue, ready_queue);
                 }
 
-                // the process at the head of ready queue is chosen to run for 
-                // one quantum                
+                // the process at the head of ready queue is chosen to run for
+                // one quantum
                 pcb_t *pcb = (pcb_t *)ready_queue->head->data;
                 if (DEBUG) {
                     printf("ACTION: Adding process %s to running queue\n",
-                            pcb->name);
+                           pcb->name);
                 }
-                printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
-                        simulation_time, pcb->name, pcb->service_time);
+                printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32
+                       "\n",
+                       simulation_time, pcb->name, pcb->service_time);
                 move_data(pcb, ready_queue, running_queue);
             }
         }
@@ -266,7 +268,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
         if (list_len(finished_queue) == num_processes) {
             break;
         }
-        
+
         simulation_time += quantum;
     }
 
@@ -360,8 +362,8 @@ void print_pcb(void *data) {
     /*  Print a pcb_t struct.
      */
     pcb_t *pcb = (pcb_t *)data;
-    printf("%" PRIu32 " %s %" PRIu32 " %" PRIu16, pcb->arrival_time, pcb->name, pcb->service_time,
-           pcb->memory_size);
+    printf("%" PRIu32 " %s %" PRIu32 " %" PRIu16, pcb->arrival_time, pcb->name,
+           pcb->service_time, pcb->memory_size);
 }
 
 /* =============================================================================
