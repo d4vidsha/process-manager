@@ -28,6 +28,7 @@ int list_len(list_t *list);
 void *remove_data(list_t *list, void *data);
 void *move_data(void *data, list_t *from, list_t *to);
 void *pop(list_t *list);
+void print_list(list_t *list, void (*print_data)(void *));
 
 #endif
 /* =============================================================================

@@ -159,6 +159,20 @@ void *pop(list_t *list) {
     return NULL;
 }
 
+void print_list(list_t *list, void (*print_data)(void *)) {
+    /*  Print a linked list in the format [data1, data2, ...].
+     */
+    assert(list);
+    printf("[");
+    for (node_t *curr = list->head; curr; curr = curr->next) {
+        print_data(curr->data);
+        if (curr->next) {
+            printf(", ");
+        }
+    }
+    printf("]\n");
+}
+
 /* =============================================================================
    Written by David Sha.
    - Originally written for COMP20003 Assignment 2, 2022, altered to fit
