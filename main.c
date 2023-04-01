@@ -69,29 +69,38 @@ void process_manager(args_t *args) {
     free_list(submitted_pcbs, free_pcb);
 }
 
-void run_cycles(list_t *submitted_pcbs, args_t *args) {
+void run_cycles(list_t *process_table, args_t *args) {
     /*  This function runs the simulation for the given list of submitted
         processes and the given arguments.
     */
+    list_t *submitted_queue = create_empty_list();
     list_t *input_queue = create_empty_list();
     list_t *ready_queue = create_empty_list();
     list_t *running_queue = create_empty_list();
     list_t *finished_queue = create_empty_list();
     int simulation_time = 0;
     int quantum = atoi(args->quantum);
-    int num_processes = list_len(submitted_pcbs);
+    int num_processes = list_len(process_table);
+
+    // copy processes from process table to submitted queue
+    for (node_t *curr = process_table->head; curr != NULL; curr = curr->next) {
+        pcb_t *pcb = (pcb_t *)curr->data;
+        append(submitted_queue, pcb);
+    }
 
     // on each cycle
     while (TRUE) {
         if (DEBUG) {
             printf("%d\n", simulation_time);
-            printf("   input: ");
+            printf("submitted: ");
+            print_list(submitted_queue, print_pcb);
+            printf("    input: ");
             print_list(input_queue, print_pcb);
-            printf("   ready: ");
+            printf("    ready: ");
             print_list(ready_queue, print_pcb);
-            printf(" running: ");
+            printf("  running: ");
             print_list(running_queue, print_pcb);
-            printf("finished: ");
+            printf(" finished: ");
             print_list(finished_queue, print_pcb);
         }
 
@@ -136,7 +145,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
         // to the system if its arrival time is less than or equal to the
         // current simulation time
         while (TRUE) {
-            node_t *curr = submitted_pcbs->head;
+            node_t *curr = submitted_queue->head;
 
             // if there are no more submittable processes, break
             if (curr == NULL) {
@@ -151,7 +160,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                     printf("ACTION: Adding process %s to input queue\n",
                            pcb->name);
                 }
-                move_data(pcb, submitted_pcbs, input_queue);
+                move_data(pcb, submitted_queue, input_queue);
             } else {
                 // this assumes that the processes are sorted by arrival time
                 break;
@@ -273,10 +282,11 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
     }
 
     // free linked lists
-    free_list(input_queue, free_pcb);
-    free_list(ready_queue, free_pcb);
-    free_list(running_queue, free_pcb);
-    free_list(finished_queue, free_pcb);
+    free_list(submitted_queue, NULL);
+    free_list(input_queue, NULL);
+    free_list(ready_queue, NULL);
+    free_list(running_queue, NULL);
+    free_list(finished_queue, NULL);
 }
 
 char *read_flag(char *flag, const char *const *valid_args, int argc,
