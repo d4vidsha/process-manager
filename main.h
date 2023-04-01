@@ -7,7 +7,7 @@
 #include "linkedlist.h"
 
 /* structures =============================================================== */
-typedef struct args {
+typedef struct arguments {
     char *file;
     char *scheduler;
     char *memory;
