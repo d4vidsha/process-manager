@@ -2,10 +2,11 @@
 #define _LINKEDLIST_H_
 
 /* structures =============================================================== */
-typedef struct node {
+typedef struct node node_t;
+struct node {
     void *data;
     node_t *next;
-} node_t;
+};
 
 typedef struct list {
     node_t *head;
