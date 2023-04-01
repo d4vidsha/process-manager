@@ -111,10 +111,11 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
 
             // decrement service time by the quantum. if service time becomes
             // negative, set it to 0
-            pcb->service_time -= quantum;
-            if (pcb->service_time < 0) {
+            if (pcb->service_time < quantum) {
                 pcb->service_time = 0;
-            }
+            } else {
+                pcb->service_time -= quantum;
+            }            
 
             if (pcb->service_time == 0) {
                 if (DEBUG) {
@@ -193,6 +194,11 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
             if (strcmp(args->scheduler, "SJF") == 0) {
 
                 // find the process with the shortest service time
+                // if two processes have the same service time, choose the
+                // process that arrived first
+                // if two processes have the same service time and arrival
+                // time, choose the process whose name comes first
+                // lexicographically
                 node_t *curr = ready_queue->head;
                 node_t *min = curr;
                 while (curr) {
@@ -200,6 +206,14 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                     pcb_t *min_pcb = (pcb_t *)min->data;
                     if (pcb->service_time < min_pcb->service_time) {
                         min = curr;
+                    } else if (pcb->service_time == min_pcb->service_time) {
+                        if (pcb->arrival_time < min_pcb->arrival_time) {
+                            min = curr;
+                        } else if (pcb->arrival_time == min_pcb->arrival_time) {
+                            if (strcmp(pcb->name, min_pcb->name) < 0) {
+                                min = curr;
+                            }
+                        }
                     }
                     curr = curr->next;
                 }
@@ -212,7 +226,7 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                         printf("ACTION: Adding process %s to running queue\n",
                                pcb->name);
                     }
-                    printf("%d,RUNNING,process_name=%s,remaining_time=%d\n",
+                    printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
                 }
@@ -320,7 +334,7 @@ void print_pcb(void *data) {
     /*  Print a pcb_t struct.
      */
     pcb_t *pcb = (pcb_t *)data;
-    printf("%d %s %d %d", pcb->arrival_time, pcb->name, pcb->service_time,
+    printf("%" PRIu32 " %s %" PRIu32 " %" PRIu16, pcb->arrival_time, pcb->name, pcb->service_time,
            pcb->memory_size);
 }
 
