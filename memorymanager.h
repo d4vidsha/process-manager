@@ -13,9 +13,10 @@ typedef struct block {
 } block_t;
 
 /* function prototypes ====================================================== */
+block_t *create_memory_block(uint16_t location, uint16_t size);
 list_t *mm_init(uint16_t size);
-list_t *mm_malloc(list_t *memory, uint16_t size);
-list_t *mm_free(list_t *memory, uint16_t location);
+void mm_malloc(list_t *memory, uint16_t size);
+void mm_free(list_t *memory, uint16_t location);
 
 #endif
 /* =============================================================================
