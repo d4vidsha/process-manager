@@ -33,7 +33,7 @@ int is_empty_list(list_t *list) {
 
 void free_list(list_t *list, void (*free_data)(void *data)) {
     /*  Free the list by freeing all nodes and its contents.
-        Give a function pointer to free the data. If no function 
+        Give a function pointer to free the data. If no function
         pointer is given, the data will not be freed.
      */
     assert(list);
