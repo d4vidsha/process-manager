@@ -87,25 +87,49 @@ void process_manager(args_t *args) {
     list_t *finished_queue = create_empty_list();
     int quantum = atoi(args->quantum);
     int simulation_time = 0;
-    while (!(is_empty_list(submitted_pcbs) == TRUE &&
-             is_empty_list(input_queue) == TRUE &&
-             is_empty_list(ready_queue) == TRUE &&
-             is_empty_list(running_queue) == TRUE)) {
+    int num_processes = list_len(submitted_pcbs);
+    while (TRUE) {
         if (DEBUG) {
             printf("%d\n", simulation_time);
+            printf("   input: ");
+            print_list(input_queue, print_pcb);
+            printf("   ready: ");
+            print_list(ready_queue, print_pcb);
+            printf(" running: ");
+            print_list(running_queue, print_pcb);
+            printf("finished: ");
+            print_list(finished_queue, print_pcb);
         }
 
         // if current running process (if any) has completed, terminate it and
         // deallocate its memory
-        if (!is_empty_list(running_queue)) {
-            pcb_t *pcb = (pcb_t *)running_queue->head->data;
-            printf("TEST: %d\n", pcb->service_time);
-            if (pcb->service_time <= 0) {
-                pcb->state = FINISHED;
+        while (TRUE) {
+            node_t *curr = running_queue->head;
+
+            // if there are no more running processes, break
+            if (curr == NULL) {
+                break;
+            }
+
+            // assuming there are more running processes, check if they
+            // should be terminated
+            pcb_t *pcb = (pcb_t *)curr->data;
+
+            // decrement service time by the quantum. if service time becomes
+            // negative, set it to 0
+            pcb->service_time -= quantum;
+            if (pcb->service_time < 0) {
+                pcb->service_time = 0;
+            }
+
+            if (pcb->service_time == 0) {
+                if (DEBUG) {
+                    printf("ACTION: Terminating process %s\n", pcb->name);
+                }
+                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n", simulation_time, pcb->name, list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
-                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
-                       simulation_time, pcb->name,
-                       list_len(ready_queue) + list_len(input_queue));
+            } else {
+                break;
             }
         }
 
@@ -114,28 +138,27 @@ void process_manager(args_t *args) {
         // in the process file. A process is considered to have been submitted
         // to the system if its arrival time is less than or equal to the
         // current simulation time
+        while (TRUE) {
+            node_t *curr = submitted_pcbs->head;
 
-        // update the state of each process in the system
-        node_t *curr;
-        curr = submitted_pcbs->head;
-        while (curr) {
+            // if there are no more submittable processes, break
+            if (curr == NULL) {
+                break;
+            }
+
+            // assuming there are more submittable processes, check if they
+            // should be added to the input queue
             pcb_t *pcb = (pcb_t *)curr->data;
             if (pcb->arrival_time <= simulation_time) {
-                pcb->state = READY;
-            }
-            curr = curr->next;
-        }
-
-        // move processes to input queue if they have READY state
-        curr = submitted_pcbs->head;
-        node_t *next = NULL;
-        while (curr) {
-            pcb_t *pcb = (pcb_t *)curr->data;
-            next = curr->next;
-            if (pcb->state == READY) {
+                if (DEBUG) {
+                    printf("ACTION: Adding process %s to input queue\n",
+                           pcb->name);
+                }
                 move_data(pcb, submitted_pcbs, input_queue);
+            } else {
+                // this assumes that the processes are sorted by arrival time
+                break;
             }
-            curr = next;
         }
 
         // move processes from the input queue to the ready queue upon
@@ -143,96 +166,66 @@ void process_manager(args_t *args) {
         // processes that are ready to run
         // memory allocation can be done in one of two ways:
         // infinite or best-fit
+        if (strcmp(args->memory, "infinite") == 0) {
+            while (TRUE) {
+                node_t *curr = input_queue->head;
 
-        curr = input_queue->head;
-        next = NULL;
-        while (curr) {
-            pcb_t *pcb = (pcb_t *)curr->data;
-            next = curr->next;
-            if (strcmp(args->memory, "infinite") == 0) {
+                // if there are no more input processes, break
+                if (curr == NULL) {
+                    break;
+                }
+
+                // assuming there are more input processes, move them
+                // directly to the ready queue
+                pcb_t *pcb = (pcb_t *)curr->data;
+                if (DEBUG) {
+                    printf("ACTION: Adding process %s to ready queue\n",
+                           pcb->name);
+                }
                 move_data(pcb, input_queue, ready_queue);
-            } else if (strcmp(args->memory, "best-fit") == 0) {
-                // TODO: implement best-fit
             }
-            curr = next;
+        } else if (strcmp(args->memory, "best-fit") == 0) {
+            // TO DO: implement best-fit memory allocation
         }
 
         // determine the process (if any) that will run in this cycle.
         // Depending on the scheduling algorithm, this may be the process
         // that has been previously running, or a ready process which
         // has not been previously running
-        pcb_t *running = NULL;
-        if (strcmp(args->scheduler, "SJF") == 0) {
-            // TODO: implement shortest job first
-        } else if (strcmp(args->scheduler, "RR") == 0) {
-            // TODO: implement round robin
-            running = pop(ready_queue);
-            if (running) {
-                running->state = RUNNING;
-                printf("%d,RUNNING,process_name=%s,remaining_time=%d\n",
-                       simulation_time, running->name, running->service_time);
-                move_data(running, ready_queue, running_queue);
+
+        // only add a process to the running queue if there is no process
+        if (running_queue->head == NULL) {
+
+            if (strcmp(args->scheduler, "SJF") == 0) {
+                node_t *curr = ready_queue->head;
+                node_t *min = curr;
+                while (curr) {
+                    pcb_t *pcb = (pcb_t *)curr->data;
+                    pcb_t *min_pcb = (pcb_t *)min->data;
+                    if (pcb->service_time < min_pcb->service_time) {
+                        min = curr;
+                    }
+                    curr = curr->next;
+                }
+                if (min) {
+                    pcb_t *pcb = (pcb_t *)min->data;
+                    if (DEBUG) {
+                        printf("ACTION: Adding process %s to running queue\n",
+                               pcb->name);
+                    }
+                    printf("%d,RUNNING,process_name=%s,remaining_time=%d\n", simulation_time, pcb->name, pcb->service_time);
+                    move_data(min->data, ready_queue, running_queue);
+                }
+            } else if (strcmp(args->scheduler, "RR") == 0) {
+                // TO DO: implement RR scheduling
             }
+        }
+
+        if (list_len(finished_queue) == num_processes) {
+            break;
         }
 
         simulation_time += quantum;
-
-        // print submitted queue
-        if (DEBUG) {
-            printf("Submitted queue: ");
-            curr = submitted_pcbs->head;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                assert(pcb->state == NEW);
-                printf("%s ", pcb->name);
-                curr = curr->next;
-            }
-            printf("\n");
-
-            // print input queue
-            printf("    Input queue: ");
-            curr = input_queue->head;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                assert(pcb->state == READY);
-                printf("%s ", pcb->name);
-                curr = curr->next;
-            }
-            printf("\n");
-
-            // print ready queue
-            printf("    Ready queue: ");
-            curr = ready_queue->head;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                assert(pcb->state == READY);
-                printf("%s ", pcb->name);
-                curr = curr->next;
-            }
-            printf("\n");
-
-            // print running queue
-            printf("  Running queue: ");
-            curr = running_queue->head;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                assert(pcb->state == RUNNING);
-                printf("%s ", pcb->name);
-                curr = curr->next;
-            }
-            printf("\n");
-
-            // print finished queue
-            printf(" Finished queue: ");
-            curr = finished_queue->head;
-            while (curr) {
-                pcb_t *pcb = (pcb_t *)curr->data;
-                assert(pcb->state == FINISHED);
-                printf("%s ", pcb->name);
-                curr = curr->next;
-            }
-            printf("\n");
-        }
     }
 
     // free linked lists
@@ -321,6 +314,14 @@ void free_pcb(void *data) {
     pcb_t *pcb = (pcb_t *)data;
     free(pcb->name);
     free(pcb);
+}
+
+void print_pcb(void *data) {
+    /*  Print a pcb_t struct.
+     */
+    pcb_t *pcb = (pcb_t *)data;
+    printf("%d %s %d %d", pcb->arrival_time, pcb->name, pcb->service_time,
+           pcb->memory_size);
 }
 
 /* =============================================================================
