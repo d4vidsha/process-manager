@@ -189,16 +189,16 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
         // Depending on the scheduling algorithm, this may be the process
         // that has been previously running, or a ready process which
         // has not been previously running
-        if (running_queue->head == NULL) {
-            // add a process to running queue if there is no running process
-            if (strcmp(args->scheduler, "SJF") == 0) {
-
-                // find the process with the shortest service time
-                // if two processes have the same service time, choose the
-                // process that arrived first
-                // if two processes have the same service time and arrival
-                // time, choose the process whose name comes first
-                // lexicographically
+        if (strcmp(args->scheduler, "SJF") == 0) {
+            // find the process with the shortest service time
+            // if two processes have the same service time, choose the
+            // process that arrived first
+            // if two processes have the same service time and arrival
+            // time, choose the process whose name comes first
+            // lexicographically
+            if (running_queue->head == NULL) {
+                // only add a process to running queue if there is no 
+                // running process
                 node_t *curr = ready_queue->head;
                 node_t *min = curr;
                 while (curr) {
@@ -224,15 +224,15 @@ void run_cycles(list_t *submitted_pcbs, args_t *args) {
                     pcb_t *pcb = (pcb_t *)min->data;
                     if (DEBUG) {
                         printf("ACTION: Adding process %s to running queue\n",
-                               pcb->name);
+                                pcb->name);
                     }
                     printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
-                           simulation_time, pcb->name, pcb->service_time);
+                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
                 }
-            } else if (strcmp(args->scheduler, "RR") == 0) {
-                // TO DO: implement RR scheduling
             }
+        } else if (strcmp(args->scheduler, "RR") == 0) {
+            // TO DO: implement RR scheduling
         }
 
         // when the finished queue contains all processes, the process manager
