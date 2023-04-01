@@ -3,6 +3,7 @@
 
 /* #includes ================================================================ */
 #include <stdint.h>
+#include "linkedlist.h"
 
 /* structures =============================================================== */
 typedef struct block {
@@ -12,8 +13,9 @@ typedef struct block {
 } block_t;
 
 /* function prototypes ====================================================== */
-void *mm_malloc(uint16_t size);
-void mm_free(void *ptr);
+list_t *mm_init(uint16_t size);
+list_t *mm_malloc(list_t *memory, uint16_t size);
+list_t *mm_free(list_t *memory, uint16_t location);
 
 #endif
 /* =============================================================================
