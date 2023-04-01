@@ -6,7 +6,7 @@
 
 /* structures =============================================================== */
 typedef struct block {
-    enum {FREE, ALLOCATED} status;
+    enum { FREE, ALLOCATED } status;
     uint16_t location;
     uint16_t size;
 } block_t;

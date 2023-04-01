@@ -17,7 +17,7 @@ $(EXE): $(OBJ)
 	$(CC) $(CFLAGS) -o $(EXE) $(OBJ) $(LDLIBS)
 
 format:
-	clang-format -style=file -i *.c
+	clang-format -style=file -i *.c *.h
 
 clean:
 	rm -f $(OBJ) $(EXE)

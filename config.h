@@ -7,11 +7,11 @@
 #define FALSE 0
 
 /*  Separator for parsing input files.
-*/
+ */
 #define SEPARATOR " "
 
 /*  Configure debug mode. Lots of useful information will be printed to stdout.
-*/
+ */
 #define DEBUG 0
 
 /*  In MB. The maximum amount of memory in the simulated system. The allowed
