@@ -6,8 +6,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include "main.h"
-#include "linkedlist.h"
-#include "config.h"
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
 const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
@@ -57,37 +55,33 @@ void process_manager(args_t *args) {
         pcb_t *pcb = parse_pcb_line(line);
         append(submitted_pcbs, pcb);
     }
-
-    // print submitted queue
-    if (DEBUG) {
-        printf("Number of processes in linked list: %d\n",
-               list_len(submitted_pcbs));
-        node_t *curr = submitted_pcbs->head;
-        while (curr) {
-            pcb_t *pcb = (pcb_t *)curr->data;
-            printf("%s, arrive: %" PRIu32 "s, service: %" PRIu32
-                   "s, mem: %" PRIu16 "MB\n",
-                   pcb->name, pcb->arrival_time, pcb->service_time,
-                   pcb->memory_size);
-            curr = curr->next;
-        }
-    }
-
-    // free line if necessary
     if (line) {
         free(line);
     }
-
-    // close file
     fclose(fp);
+    if (DEBUG) {
+        printf("ACTION: Printing submitted queue...\n");
+        print_list(submitted_pcbs, print_pcb);
+    }
 
+    // run simulation given the processes in the submitted queue and the args
+    run_cycles(submitted_pcbs, args);
+    free_list(submitted_pcbs, free_pcb);
+}
+
+void run_cycles(list_t *submitted_pcbs, args_t *args) {
+    /*  This function runs the simulation for the given list of submitted
+        processes and the given arguments.
+    */
     list_t *input_queue = create_empty_list();
     list_t *ready_queue = create_empty_list();
     list_t *running_queue = create_empty_list();
     list_t *finished_queue = create_empty_list();
-    int quantum = atoi(args->quantum);
     int simulation_time = 0;
+    int quantum = atoi(args->quantum);
     int num_processes = list_len(submitted_pcbs);
+
+    // on each cycle
     while (TRUE) {
         if (DEBUG) {
             printf("%d\n", simulation_time);
@@ -194,7 +188,6 @@ void process_manager(args_t *args) {
         // Depending on the scheduling algorithm, this may be the process
         // that has been previously running, or a ready process which
         // has not been previously running
-
         if (running_queue->head == NULL) {
             // add a process to running queue if there is no running process
             if (strcmp(args->scheduler, "SJF") == 0) {
@@ -228,15 +221,16 @@ void process_manager(args_t *args) {
             }
         }
 
+        // when the finished queue contains all processes, the process manager
+        // can terminate
         if (list_len(finished_queue) == num_processes) {
             break;
         }
-
+        
         simulation_time += quantum;
     }
 
     // free linked lists
-    free_list(submitted_pcbs, free_pcb);
     free_list(input_queue, free_pcb);
     free_list(ready_queue, free_pcb);
     free_list(running_queue, free_pcb);

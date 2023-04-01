@@ -4,6 +4,7 @@
 /* #includes ================================================================ */
 #include <stdint.h>
 #include "config.h"
+#include "linkedlist.h"
 
 /* structures =============================================================== */
 typedef struct args {
@@ -28,6 +29,7 @@ void process_manager(args_t *args);
 pcb_t *parse_pcb_line(char *line);
 void free_pcb(void *data);
 void print_pcb(void *data);
+void run_cycles(list_t *submitted_pcbs, args_t *args);
 
 #endif
 /* =============================================================================
