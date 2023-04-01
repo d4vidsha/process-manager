@@ -3,10 +3,7 @@
 
 /* #includes ================================================================ */
 #include <stdint.h>
-
-/* constants ================================================================ */
-#define SEPARATOR " "
-#define DEBUG 1
+#include "config.h"
 
 /* structures =============================================================== */
 typedef struct args {
@@ -31,6 +28,7 @@ args_t *parse_args(int argc, char *argv[]);
 void process_manager(args_t *args);
 pcb_t *parse_pcb_line(char *line);
 void free_pcb(void *data);
+void print_pcb(void *data);
 
 #endif
 /* =============================================================================
