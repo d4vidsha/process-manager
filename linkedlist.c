@@ -58,12 +58,15 @@ list_t *prepend(list_t *list, void *data) {
     new = (node_t *)malloc(sizeof(*new));
     assert(new);
     new->data = data;
+    new->prev = NULL;
     new->next = list->head;
-    list->head = new;
-    if (list->foot == NULL) {
+    if (list->head) {
+        list->head->prev = new;
+    } else {
         /* this is the first insert into list */
         list->foot = new;
     }
+    list->head = new;
     return list;
 }
 
@@ -76,13 +79,14 @@ list_t *append(list_t *list, void *data) {
     assert(new);
     new->data = data;
     new->next = NULL;
-    if (list->foot == NULL) {
-        /* this is the first insert into list */
-        list->head = list->foot = new;
-    } else {
+    new->prev = list->foot;
+    if (list->foot) {
         list->foot->next = new;
-        list->foot = new;
+    } else {
+        /* this is the first insert into list */
+        list->head = new;
     }
+    list->foot = new;
     return list;
 }
 
@@ -115,6 +119,9 @@ void *remove_data(list_t *list, void *data) {
                 if (list->foot == curr) {
                     /* also removing the last node in the list */
                     list->foot = NULL;
+                } else {
+                    /* set the prev pointer of the new head */
+                    list->head->prev = NULL;
                 }
             } else {
                 /* removing a node in the middle or end of the list */
@@ -122,6 +129,9 @@ void *remove_data(list_t *list, void *data) {
                 if (list->foot == curr) {
                     /* also removing the last node in the list */
                     list->foot = prev;
+                } else {
+                    /* set the prev pointer of the next node */
+                    curr->next->prev = prev;
                 }
             }
             free(curr);
@@ -154,6 +164,9 @@ void *pop(list_t *list) {
         if (list->foot == head) {
             /* also removing the last node in the list */
             list->foot = NULL;
+        } else {
+            /* set the prev pointer of the new head */
+            list->head->prev = NULL;
         }
         void *data = head->data;
         free(head);
