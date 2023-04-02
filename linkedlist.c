@@ -104,40 +104,45 @@ int list_len(list_t *list) {
     return len;
 }
 
+void remove_node(list_t *list, node_t *node) {
+    /*  Remove a node from the list.
+     */
+    assert(list && node);
+    if (node->prev == NULL) {
+        /* removing the first node in the list */
+        list->head = node->next;
+        if (list->foot == node) {
+            /* also removing the last node in the list */
+            list->foot = NULL;
+        } else {
+            /* set the prev pointer of the new head */
+            list->head->prev = NULL;
+        }
+    } else {
+        /* removing a node in the middle or end of the list */
+        node->prev->next = node->next;
+        if (list->foot == node) {
+            /* also removing the last node in the list */
+            list->foot = node->prev;
+        } else {
+            /* set the prev pointer of the next node */
+            node->next->prev = node->prev;
+        }
+    }
+    free(node);
+}
+
 void *remove_data(list_t *list, void *data) {
     /*  Remove data from the list. If data is not in the list, return NULL.
      */
     assert(list && data);
-    node_t *curr, *prev;
+    node_t *curr;
     curr = list->head;
-    prev = NULL;
     while (curr) {
         if (curr->data == data) {
-            if (prev == NULL) {
-                /* removing the first node in the list */
-                list->head = curr->next;
-                if (list->foot == curr) {
-                    /* also removing the last node in the list */
-                    list->foot = NULL;
-                } else {
-                    /* set the prev pointer of the new head */
-                    list->head->prev = NULL;
-                }
-            } else {
-                /* removing a node in the middle or end of the list */
-                prev->next = curr->next;
-                if (list->foot == curr) {
-                    /* also removing the last node in the list */
-                    list->foot = prev;
-                } else {
-                    /* set the prev pointer of the next node */
-                    curr->next->prev = prev;
-                }
-            }
-            free(curr);
+            remove_node(list, curr);
             return data;
         }
-        prev = curr;
         curr = curr->next;
     }
     return NULL;

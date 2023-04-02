@@ -22,10 +22,13 @@ void free_list(list_t *list, void (*free_data)(void *data));
 list_t *prepend(list_t *list, void *data);
 list_t *append(list_t *list, void *data);
 int list_len(list_t *list);
+void remove_node(list_t *list, node_t *node);
 void *remove_data(list_t *list, void *data);
 void *move_data(void *data, list_t *from, list_t *to);
 void *pop(list_t *list);
 void print_list(list_t *list, void (*print_data)(void *));
+list_t *insert_prev(list_t *list, node_t *node, void *data);
+list_t *insert_next(list_t *list, node_t *node, void *data);
 
 #endif
 /* =============================================================================
