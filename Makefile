@@ -16,6 +16,9 @@ EXE = allocate
 $(EXE): $(OBJ) 
 	$(CC) $(CFLAGS) -o $(EXE) $(OBJ) $(LDLIBS)
 
+process:
+	gcc -Wall -g -o process process.c
+
 format:
 	clang-format -style=file -i *.c *.h
 
