@@ -13,7 +13,7 @@
 
 /*  Configure debug mode. Lots of useful information will be printed to stdout.
  */
-#define DEBUG 1
+#define DEBUG 0
 
 /*  In MB. The maximum amount of memory in the simulated system. The allowed
     max is 2^16 = 65536 because we use uint16_t for pcb_t.memory_size,
