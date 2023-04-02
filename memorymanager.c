@@ -81,8 +81,7 @@ void mm_free(list_t *memory, uint16_t location) {
                     block_t *prev = (block_t *)curr->prev->data;
                     if (prev->status == FREE) {
                         prev->size += block->size;
-                        memory = remove_node(memory, curr);
-                        free(block);
+                        remove_node(memory, curr);
                     }
                 }
         
@@ -91,8 +90,7 @@ void mm_free(list_t *memory, uint16_t location) {
                     block_t *next = (block_t *)curr->next->data;
                     if (next->status == FREE) {
                         block->size += next->size;
-                        memory = remove_node(memory, curr->next);
-                        free(next);
+                        remove_node(memory, curr->next);
                     }
                 }
             } else {
