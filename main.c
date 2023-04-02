@@ -73,6 +73,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     /*  This function runs the simulation for the given list of submitted
         processes and the given arguments.
     */
+    list_t *memory = mm_init(MAX_MEMORY);
     list_t *submitted_queue = create_empty_list();
     list_t *input_queue = create_empty_list();
     list_t *ready_queue = create_empty_list();
@@ -92,6 +93,8 @@ void run_cycles(list_t *process_table, args_t *args) {
     while (TRUE) {
         if (DEBUG) {
             printf("%d\n", simulation_time);
+            printf("   memory: ");
+            print_list(memory, print_block);
             printf("submitted: ");
             print_list(submitted_queue, print_pcb);
             printf("    input: ");
@@ -129,6 +132,13 @@ void run_cycles(list_t *process_table, args_t *args) {
             if (pcb->service_time == 0) {
                 if (DEBUG) {
                     printf("ACTION: Terminating process %s\n", pcb->name);
+                }
+                if (strcmp(args->memory, "best-fit") == 0) {
+                    mm_free(memory, pcb->memory);
+                    pcb->memory = NULL;
+                    if (DEBUG) {
+                        print_list(memory, print_block);
+                    }
                 }
                 printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
                        simulation_time, pcb->name,
@@ -191,7 +201,36 @@ void run_cycles(list_t *process_table, args_t *args) {
                 move_data(pcb, input_queue, ready_queue);
             }
         } else if (strcmp(args->memory, "best-fit") == 0) {
-            // TO DO: implement best-fit memory allocation
+
+            // copy input queue to a temporary queue
+            list_t *temp_queue = create_empty_list();
+            for (node_t *curr = input_queue->head; curr != NULL;
+                 curr = curr->next) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+                append(temp_queue, pcb);
+            }
+
+            // try to allocate memory for each process in the input queue
+            for (node_t *curr = temp_queue->head; curr != NULL;
+                 curr = curr->next) {
+                pcb_t *pcb = (pcb_t *)curr->data;
+
+                // try to allocate memory
+                pcb->memory = (block_t *)mm_malloc(memory, pcb->memory_size);
+                if (pcb->memory) {
+                    // if memory was successfully allocated, move the
+                    // process to the ready queue
+                    if (DEBUG) {
+                        printf("ACTION: Process %s successfully allocated memory\n", pcb->name);
+                    }
+                    printf("%d,READY,process_name=%s,assigned_at=%" PRIu16 "\n",
+                           simulation_time, pcb->name, pcb->memory->location);
+                    move_data(pcb, input_queue, ready_queue);
+                }
+            }
+
+            // free temporary queue
+            free_list(temp_queue, NULL);
         }
 
         // determine the process (if any) that will run in this cycle.
@@ -282,6 +321,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     }
 
     // free linked lists
+    free_list(memory, free);
     free_list(submitted_queue, NULL);
     free_list(input_queue, NULL);
     free_list(ready_queue, NULL);
@@ -357,6 +397,7 @@ pcb_t *parse_pcb_line(char *line) {
     pcb->service_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
     pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
+    pcb->memory = NULL;
     return pcb;
 }
 

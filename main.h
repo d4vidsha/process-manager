@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "config.h"
 #include "linkedlist.h"
+#include "memorymanager.h"
 
 /* structures =============================================================== */
 typedef struct arguments {
@@ -19,6 +20,7 @@ typedef struct process_control_block {
     uint32_t arrival_time;
     uint32_t service_time;
     uint16_t memory_size;
+    block_t *memory;
 } pcb_t;
 
 /* function prototypes ====================================================== */
