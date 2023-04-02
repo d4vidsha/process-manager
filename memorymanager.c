@@ -24,34 +24,35 @@ list_t *mm_init(uint16_t size) {
     return memory;
 }
 
-list_t *mm_malloc(list_t *memory, uint16_t size) {
+block_t *mm_malloc(list_t *memory, uint16_t size) {
     /*  Allocate memory of size `size` to the process.
         The memory manager will find the best fit block and allocate it.
         If there is no free block that can fit the process, return NULL.
     */
     // find the best fit block
     block_t *min = NULL;
-    node_t *min_node = NULL;
     for (node_t *curr = memory->head; curr; curr = curr->next) {
-        block_t *block = min = (block_t *)curr->data;
-        if (block->status == FREE && block->size >= size &&
-            block->size < min->size && block->location < min->location) {
+        block_t *block = (block_t *)curr->data;
+        if (block->status == FREE && block->size >= size) {
             min = block;
-            min_node = curr;
         }
     }
 
-    // split the block if possible and allocate it
+    // split the block if not perfect fit and allocate
     if (min) {
+        assert(min->status == FREE);
         if (size < min->size) {
             block_t *new = create_memory_block(ALLOCATED, min->location, size);
             min->size -= size;
             min->location += size;
-            return insert_prev(memory, min_node, new);
+            // get the node of the best fit block
+            node_t *min_node = (node_t *)find_node(memory, min, cmp_addr);
+            insert_prev(memory, min_node, new);
+            return new;
         } else if (size == min->size) {
             // memory block is exactly the size of the process
             min->status = ALLOCATED;
-            return memory;
+            return min;
         } else {
             // memory block is smaller than the process, this should
             // never happen
@@ -62,43 +63,57 @@ list_t *mm_malloc(list_t *memory, uint16_t size) {
     return NULL;
 }
 
-void mm_free(list_t *memory, uint16_t location) {
-    /*  Free the memory block at `location`.
+void mm_free(list_t *memory, block_t *block) {
+    /*  Free the memory block.
         The memory manager will merge the block with its adjacent free blocks.
         If the block is already free, do nothing.
      */
-    for (node_t *curr = memory->head; curr; curr = curr->next) {
-        block_t *block = (block_t *)curr->data;
 
-        if (block->location == location) {
-        
-            // the block is found at location
-            if (block->status == ALLOCATED) {
-                block->status = FREE;
-        
-                // merge with previous block
-                if (curr->prev) {
-                    block_t *prev = (block_t *)curr->prev->data;
-                    if (prev->status == FREE) {
-                        prev->size += block->size;
-                        remove_node(memory, curr);
-                    }
+    // check if the block is already free
+    if (block->status == FREE) {
+        return;
+    }
+
+    for (node_t *curr = memory->head; curr; curr = curr->next) {
+        block_t *curr_block = (block_t *)curr->data;
+
+        if (cmp_addr(curr_block, block) == 0) {
+            // the block is found
+
+            assert(curr_block->status == ALLOCATED);
+            curr_block->status = FREE;
+
+            // merge next block into current block
+            if (curr->next) {
+                block_t *next = (block_t *)curr->next->data;
+                if (next->status == FREE) {
+                    curr_block->size += next->size;
+                    remove_node(memory, curr->next);
+                    free(next);
                 }
-        
-                // merge with next block
-                if (curr->next) {
-                    block_t *next = (block_t *)curr->next->data;
-                    if (next->status == FREE) {
-                        block->size += next->size;
-                        remove_node(memory, curr->next);
-                    }
-                }
-            } else {
-                // block is already free, do nothing
             }
+
+            // merge current block into previous block
+            if (curr->prev) {
+                block_t *prev = (block_t *)curr->prev->data;
+                if (prev->status == FREE) {
+                    prev->size += curr_block->size;
+                    remove_node(memory, curr);
+                    free(curr_block);
+                }
+            }
+
             break;
         }
     }
+}
+
+void print_block(void *data) {
+    /*  Print the block.
+     */
+    block_t *block = (block_t *)data;
+    printf("%s-%d-%d", block->status == FREE ? "FREED" : "ALLOC",
+           block->location, block->size);
 }
 
 /* =============================================================================
