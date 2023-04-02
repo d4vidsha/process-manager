@@ -234,6 +234,24 @@ list_t *insert_next(list_t *list, node_t *node, void *data) {
     return list;
 }
 
+void *find_node(list_t *list, void *data, int (*cmp)(void *, void *)) {
+    /*  Find data in the list. If data is not in the list, return NULL.
+     */
+    assert(list && data && cmp);
+    for (node_t *curr = list->head; curr; curr = curr->next) {
+        if (cmp(curr->data, data) == 0) {
+            return curr;
+        }
+    }
+    return NULL;
+}
+
+int cmp_addr(void *a, void *b) {
+    /*  Compare two addresses. If a == b, return 0. Otherwise, return 1.
+     */
+    return a != b;
+}
+
 /* =============================================================================
    Written by David Sha.
    - Originally written for COMP20003 Assignment 2, 2022, altered to fit
