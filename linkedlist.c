@@ -189,6 +189,46 @@ void print_list(list_t *list, void (*print_data)(void *)) {
     printf("]\n");
 }
 
+list_t *insert_prev(list_t *list, node_t *node, void *data) {
+    /*  Insert data before the given node.
+     */
+    assert(list && node && data);
+    node_t *new;
+    new = (node_t *)malloc(sizeof(*new));
+    assert(new);
+    new->data = data;
+    new->prev = node->prev;
+    new->next = node;
+    if (node->prev) {
+        node->prev->next = new;
+    } else {
+        /* this is the first insert into list */
+        list->head = new;
+    }
+    node->prev = new;
+    return list;
+}
+
+list_t *insert_next(list_t *list, node_t *node, void *data) {
+    /*  Insert data after the given node.
+     */
+    assert(list && node && data);
+    node_t *new;
+    new = (node_t *)malloc(sizeof(*new));
+    assert(new);
+    new->data = data;
+    new->next = node->next;
+    new->prev = node;
+    if (node->next) {
+        node->next->prev = new;
+    } else {
+        /* this is the first insert into list */
+        list->foot = new;
+    }
+    node->next = new;
+    return list;
+}
+
 /* =============================================================================
    Written by David Sha.
    - Originally written for COMP20003 Assignment 2, 2022, altered to fit
