@@ -18,8 +18,12 @@
 /*  In MB. The maximum amount of memory in the simulated system. The allowed
     max is 2^16 = 65536 because we use uint16_t for pcb_t.memory_size,
     block.location, and block.size.
-*/
+ */
 #define MAX_MEMORY 2048
+
+/*  Enables task4 (real process). Comment out to disable.
+ */
+#define IMPLEMENTS_REAL_PROCESS
 
 #endif
 /* =============================================================================

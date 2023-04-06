@@ -144,6 +144,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                        simulation_time, pcb->name,
                        list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
+                // task4: terminate process
             } else {
                 break;
             }
@@ -221,7 +222,9 @@ void run_cycles(list_t *process_table, args_t *args) {
                     // if memory was successfully allocated, move the
                     // process to the ready queue
                     if (DEBUG) {
-                        printf("ACTION: Process %s successfully allocated memory\n", pcb->name);
+                        printf("ACTION: Process %s successfully allocated "
+                               "memory\n",
+                               pcb->name);
                     }
                     printf("%d,READY,process_name=%s,assigned_at=%" PRIu16 "\n",
                            simulation_time, pcb->name, pcb->memory->location);
@@ -278,6 +281,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                            "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
+                    // task4: create process
                 }
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
@@ -308,6 +312,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                        "\n",
                        simulation_time, pcb->name, pcb->service_time);
                 move_data(pcb, ready_queue, running_queue);
+                // task4: create process
             }
         }
 
@@ -416,6 +421,8 @@ void print_pcb(void *data) {
     printf("%" PRIu32 " %s %" PRIu32 " %" PRIu16, pcb->arrival_time, pcb->name,
            pcb->service_time, pcb->memory_size);
 }
+
+void create_process(pcb_t *pcb) {}
 
 /* =============================================================================
    Written by David Sha.
