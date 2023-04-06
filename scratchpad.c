@@ -19,9 +19,9 @@ int main(void) {
     uint32_t value = 3215;
     value = htonl(value);
     memcpy(simulation_time, &value, sizeof(value));
-    // printf("%02x %02x %02x %02x\n", (uint8_t) simulation_time[0], (uint8_t)
-    // simulation_time[1], (uint8_t) simulation_time[2], (uint8_t)
-    // simulation_time[3]);
+    // printf("%02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
 
     create_process(simulation_time);
 
@@ -101,7 +101,6 @@ void suspend_process(char *simulation_time) {
         2. Send a SIGSTOP signal to the process and wait for ./process
            to enter a stopped state.
      */
-    
 }
 
 void resume_process(char *simulation_time) {
