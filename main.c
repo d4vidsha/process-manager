@@ -81,7 +81,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     list_t *running_queue = create_empty_list();
     list_t *finished_queue = create_empty_list();
     uint32_t simulation_time = 0;
-    int quantum = atoi(args->quantum);
+    uint32_t quantum = atoi(args->quantum);
     int num_processes = list_len(process_table);
 
     // big endian byte order for simulation time
