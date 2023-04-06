@@ -83,9 +83,9 @@ void run_cycles(list_t *process_table, args_t *args) {
     uint32_t simulation_time = 0;
     uint32_t quantum = atoi(args->quantum);
     int num_processes = list_len(process_table);
+    char big_endian_simulation_time[4] = {0, 0, 0, 0};
 
     // big endian byte order for simulation time
-    char big_endian_simulation_time[4] = {0, 0, 0, 0};
     convert_to_big_endian(simulation_time, big_endian_simulation_time);
     if (DEBUG) {
         printf("INFO: Big Endian simulation time: %02x %02x %02x %02x\n",
