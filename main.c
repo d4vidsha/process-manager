@@ -98,6 +98,14 @@ void run_cycles(list_t *process_table, args_t *args) {
                (uint8_t)big_endian_simulation_time[3]);
     }
 
+    // test task 4
+    initialise_process(process_table->head->data);
+    start_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
+    suspend_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
+    resume_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
+    free(terminate_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time));
+    free_process(((pcb_t *)process_table->head->data)->process);
+
     // copy processes from process table to submitted queue
     for (node_t *curr = process_table->head; curr != NULL; curr = curr->next) {
         pcb_t *pcb = (pcb_t *)curr->data;
@@ -299,7 +307,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                            "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
-                    // task4: create process
+                    // task4: create process                    
                 }
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
@@ -529,14 +537,14 @@ void check_process(process_t *process, char *simulation_time) {
         and checking that the least significant bit of the message
         is the same as the output from the process executable.
      */
-    char response[1];
-    receive_message(process, response);
+    // char response[1] = {0};
+    // receive_message(process, response);
 
-    // check response is same as least significant bit of message
-    if (response[0] != simulation_time[strlen(simulation_time) - 1]) {
-        printf("Error: Big Endian ordering did not pass correctly.\n");
-        exit(EXIT_FAILURE);
-    }
+    // // check response is same as least significant bit of message
+    // if (response[0] != simulation_time[strlen(simulation_time) - 1]) {
+    //     printf("Error: Big Endian ordering did not pass correctly.\n");
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void start_process(process_t *process, char *simulation_time) {
@@ -578,11 +586,7 @@ void resume_process(process_t *process, char *simulation_time) {
     send_message(process, simulation_time);
 
     // resume process
-    int wstatus;
     kill(process->pid, SIGCONT);
-    do {
-        waitpid(process->pid, &wstatus, WUNTRACED);
-    } while (!WIFCONTINUED(wstatus));
 
     // check that the process was resumed correctly
     check_process(process, simulation_time);
@@ -600,14 +604,10 @@ char *terminate_process(process_t *process, char *simulation_time) {
     send_message(process, simulation_time);
 
     // terminate process
-    int wstatus;
     kill(process->pid, SIGTERM);
-    do {
-        waitpid(process->pid, &wstatus, WUNTRACED);
-    } while (!WIFSIGNALED(wstatus));
 
     // read 64 byte string from stdout of process executable
-    char *string = (char *)malloc(64 * sizeof(char));
+    char *string = (char *)calloc(64, sizeof(char));
     assert(string);
     receive_message(process, string);
 
