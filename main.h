@@ -15,12 +15,19 @@ typedef struct arguments {
     char *quantum;
 } args_t;
 
+typedef struct process {
+    pid_t pid;
+    int to_process[2];
+    int to_manager[2];
+} process_t;
+
 typedef struct process_control_block {
     char *name;
     uint32_t arrival_time;
     uint32_t service_time;
     uint16_t memory_size;
     block_t *memory;
+    process_t *process;
 } pcb_t;
 
 /* function prototypes ====================================================== */
@@ -33,6 +40,16 @@ void free_pcb(void *data);
 void print_pcb(void *data);
 void run_cycles(list_t *submitted_pcbs, args_t *args);
 void convert_to_big_endian(uint32_t value, char *big_endian);
+process_t *initialise_process(pcb_t *pcb);
+void free_process(void *data);
+void print_process(void *data);
+void send_message(process_t *process, char *message);
+void receive_message(process_t *process, char *message);
+void check_process(process_t *process, char *simulation_time);
+void start_process(process_t *process, char *simulation_time);
+void suspend_process(process_t *process, char *simulation_time);
+void resume_process(process_t *process, char *simulation_time);
+char *terminate_process(process_t *process, char *simulation_time);
 
 #endif
 /* =============================================================================

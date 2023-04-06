@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <unistd.h>
 #include "main.h"
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
@@ -393,6 +396,7 @@ args_t *parse_args(int argc, char *argv[]) {
     */
     args_t *args;
     args = (args_t *)malloc(sizeof(*args));
+    assert(args);
     args->file = read_flag("-f", NULL, argc, argv);
     args->scheduler = read_flag("-s", SCHEDULERS, argc, argv);
     args->memory = read_flag("-m", MEMORY_METHODS, argc, argv);
@@ -409,15 +413,20 @@ pcb_t *parse_pcb_line(char *line) {
     */
     pcb_t *pcb;
     pcb = (pcb_t *)malloc(sizeof(*pcb));
+    assert(pcb);
     char *token = strtok(line, SEPARATOR);
     pcb->arrival_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
-    pcb->name = memcpy(malloc(strlen(token) + 1), token, strlen(token) + 1);
+    char *name;
+    name = (char *)malloc(strlen(token) + 1);
+    assert(name);
+    pcb->name = memcpy(name, token, strlen(token) + 1);
     token = strtok(NULL, SEPARATOR);
     pcb->service_time = (uint32_t)strtoul(token, NULL, 10);
     token = strtok(NULL, SEPARATOR);
     pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
     pcb->memory = NULL;
+    pcb->process = NULL;
     return pcb;
 }
 
@@ -443,6 +452,166 @@ void convert_to_big_endian(uint32_t value, char *big_endian) {
      */
     value = htonl(value);
     memcpy(big_endian, &value, sizeof(value));
+}
+
+process_t *initialise_process(pcb_t *pcb) {
+    /*  Create a process_t struct and fork a process to run the process
+        executable.
+     */
+    process_t *process;
+    process = (process_t *)malloc(sizeof(*process));
+    assert(process);
+    pcb->process = process;
+
+    // create pipes for communication
+    if (pipe(process->to_process) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+    if (pipe(process->to_manager) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+
+    // use fork to create a new process
+    switch (process->pid = fork()) {
+    case -1:
+        // error
+        perror("fork");
+        exit(1);
+
+    case 0:
+        // child process
+        char *cmd[] = {"./process", "-v", pcb->name, NULL};
+        execvp(cmd[0], cmd);
+
+    default:
+        // parent process
+        break;
+    }
+    return process;
+}
+
+void free_process(void *data) {
+    /*  Free a process_t struct.
+     */
+    process_t *process = (process_t *)data;
+    free(process);
+}
+
+void print_process(void *data) {
+    /*  Print a process_t struct.
+     */
+    process_t *process = (process_t *)data;
+    printf("%d", process->pid);
+}
+
+void send_message(process_t *process, char *message) {
+    /*  Send a message to a process.
+     */
+    if (write(process->to_process[1], message, strlen(message)) == -1) {
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void receive_message(process_t *process, char *message) {
+    /*  Receive a message from a process.
+     */
+    if (read(process->to_manager[0], message, strlen(message)) == -1) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void check_process(process_t *process, char *simulation_time) {
+    /*  Check that a process is still running by sending a message
+        and checking that the least significant bit of the message
+        is the same as the output from the process executable.
+     */
+    char response[1];
+    receive_message(process, response);
+
+    // check response is same as least significant bit of message
+    if (response[0] != simulation_time[strlen(simulation_time) - 1]) {
+        printf("Error: Big Endian ordering did not pass correctly.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void start_process(process_t *process, char *simulation_time) {
+    /*  Send the simulation time as a message to a process
+        to start the process.
+
+        Check that the process was started correctly by checking
+        that the least significant bit of the message is the same
+        as the output from the process executable.
+     */
+    send_message(process, simulation_time);
+
+    // check that the process was started correctly
+    check_process(process, simulation_time);
+}
+
+void suspend_process(process_t *process, char *simulation_time) {
+    /*  Send a simulation time as a message to a process. Then
+        suspend the process by sending a SIGSTOP signal.
+     */
+    send_message(process, simulation_time);
+
+    // suspend process
+    int wstatus;
+    kill(process->pid, SIGSTOP);
+    do {
+        waitpid(process->pid, &wstatus, WUNTRACED);
+    } while (!WIFSTOPPED(wstatus));
+}
+
+void resume_process(process_t *process, char *simulation_time) {
+    /*  Send a simulation time as a message to a process. Then
+        resume the process by sending a SIGCONT signal.
+
+        Check that the process was resumed correctly by checking
+        that the least significant bit of the message is the same
+        as the output from the process executable.
+     */
+    send_message(process, simulation_time);
+
+    // resume process
+    int wstatus;
+    kill(process->pid, SIGCONT);
+    do {
+        waitpid(process->pid, &wstatus, WUNTRACED);
+    } while (!WIFCONTINUED(wstatus));
+
+    // check that the process was resumed correctly
+    check_process(process, simulation_time);
+}
+
+char *terminate_process(process_t *process, char *simulation_time) {
+    /*  Send a simulation time as a message to a process. Then
+        terminate the process by sending a SIGTERM signal.
+
+        Then read a 64 byte string from stdout of process executable
+        and include in execution transcript.
+
+        Return the string.
+     */
+    send_message(process, simulation_time);
+
+    // terminate process
+    int wstatus;
+    kill(process->pid, SIGTERM);
+    do {
+        waitpid(process->pid, &wstatus, WUNTRACED);
+    } while (!WIFSIGNALED(wstatus));
+
+    // read 64 byte string from stdout of process executable
+    char *string = (char *)malloc(64 * sizeof(char));
+    assert(string);
+    receive_message(process, string);
+
+    return string;
 }
 
 /* =============================================================================
