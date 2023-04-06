@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include "main.h"
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
@@ -79,9 +80,20 @@ void run_cycles(list_t *process_table, args_t *args) {
     list_t *ready_queue = create_empty_list();
     list_t *running_queue = create_empty_list();
     list_t *finished_queue = create_empty_list();
-    int simulation_time = 0;
+    uint32_t simulation_time = 0;
     int quantum = atoi(args->quantum);
     int num_processes = list_len(process_table);
+
+    // big endian byte order for simulation time
+    char big_endian_simulation_time[4] = {0, 0, 0, 0};
+    convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    if (DEBUG) {
+        printf("INFO: Big Endian simulation time: %02x %02x %02x %02x\n",
+               (uint8_t)big_endian_simulation_time[0],
+               (uint8_t)big_endian_simulation_time[1],
+               (uint8_t)big_endian_simulation_time[2],
+               (uint8_t)big_endian_simulation_time[3]);
+    }
 
     // copy processes from process table to submitted queue
     for (node_t *curr = process_table->head; curr != NULL; curr = curr->next) {
@@ -92,7 +104,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     // on each cycle
     while (TRUE) {
         if (DEBUG) {
-            printf("%d\n", simulation_time);
+            printf("%" PRIu32 "\n", simulation_time);
             printf("   memory: ");
             print_list(memory, print_block);
             printf("submitted: ");
@@ -140,7 +152,8 @@ void run_cycles(list_t *process_table, args_t *args) {
                         print_list(memory, print_block);
                     }
                 }
-                printf("%d,FINISHED,process_name=%s,proc_remaining=%d\n",
+                printf("%" PRIu32
+                       ",FINISHED,process_name=%s,proc_remaining=%d\n",
                        simulation_time, pcb->name,
                        list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
@@ -226,7 +239,8 @@ void run_cycles(list_t *process_table, args_t *args) {
                                "memory\n",
                                pcb->name);
                     }
-                    printf("%d,READY,process_name=%s,assigned_at=%" PRIu16 "\n",
+                    printf("%" PRIu32
+                           ",READY,process_name=%s,assigned_at=%" PRIu16 "\n",
                            simulation_time, pcb->name, pcb->memory->location);
                     move_data(pcb, input_queue, ready_queue);
                 }
@@ -277,7 +291,8 @@ void run_cycles(list_t *process_table, args_t *args) {
                         printf("ACTION: Adding process %s to running queue\n",
                                pcb->name);
                     }
-                    printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32
+                    printf("%" PRIu32
+                           ",RUNNING,process_name=%s,remaining_time=%" PRIu32
                            "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
@@ -308,8 +323,8 @@ void run_cycles(list_t *process_table, args_t *args) {
                     printf("ACTION: Adding process %s to running queue\n",
                            pcb->name);
                 }
-                printf("%d,RUNNING,process_name=%s,remaining_time=%" PRIu32
-                       "\n",
+                printf("%" PRIu32
+                       ",RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
                        simulation_time, pcb->name, pcb->service_time);
                 move_data(pcb, ready_queue, running_queue);
                 // task4: create process
@@ -422,7 +437,13 @@ void print_pcb(void *data) {
            pcb->service_time, pcb->memory_size);
 }
 
-void create_process(pcb_t *pcb) {}
+void convert_to_big_endian(uint32_t value, char *big_endian) {
+    /*  Convert a 32-bit integer to big endian and store it in a char array of
+        length 4.
+     */
+    value = htonl(value);
+    memcpy(big_endian, &value, sizeof(value));
+}
 
 /* =============================================================================
    Written by David Sha.

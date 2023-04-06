@@ -32,6 +32,7 @@ pcb_t *parse_pcb_line(char *line);
 void free_pcb(void *data);
 void print_pcb(void *data);
 void run_cycles(list_t *submitted_pcbs, args_t *args);
+void convert_to_big_endian(uint32_t value, char *big_endian);
 
 #endif
 /* =============================================================================
