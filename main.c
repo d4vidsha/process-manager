@@ -198,6 +198,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                                               big_endian_simulation_time);
                 printf("%" PRIu32 ",FINISHED-PROCESS,process_name=%s,sha=%s\n",
                        simulation_time, pcb->name, sha256);
+                free(sha256);
             } else {
                 break;
             }
@@ -686,9 +687,12 @@ char *terminate_process(process_t *process, char *simulation_time) {
     kill(process->pid, SIGTERM);
 
     // read 64 byte string from stdout of process executable
-    char *string = (char *)calloc(64, sizeof(char));
+    char *string = (char *)calloc(64 + 1, sizeof(char));
     assert(string);
     receive_message(process, string, 64);
+
+    // free process
+    free_process(process);
 
     return string;
 }
