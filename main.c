@@ -1,15 +1,9 @@
 #include <assert.h>
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <arpa/inet.h>
-#include <signal.h>
-#include <unistd.h>
-#include <time.h>
 #include "main.h"
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
@@ -57,7 +51,7 @@ void process_manager(args_t *args) {
     size_t len = 0;
     ssize_t read;
     while ((read = getline(&line, &len, fp)) != -1) {
-        pcb_t *pcb = parse_pcb_line(line);
+        pcb_t *pcb = create_pcb(line);
         append(submitted_pcbs, pcb);
     }
     if (line) {
@@ -529,227 +523,12 @@ args_t *parse_args(int argc, char *argv[]) {
     return args;
 }
 
-pcb_t *parse_pcb_line(char *line) {
-    /*  Given a line from the input file, parse it and return a pcb_t
-        struct.
-
-        The line should be in the format:
-        <arrival time> <name> <service time> <memory size>
-    */
-    pcb_t *pcb;
-    pcb = (pcb_t *)malloc(sizeof(*pcb));
-    assert(pcb);
-    char *token = strtok(line, SEPARATOR);
-    pcb->arrival_time = (uint32_t)strtoul(token, NULL, 10);
-    token = strtok(NULL, SEPARATOR);
-    char *name;
-    name = (char *)malloc(strlen(token) + 1);
-    assert(name);
-    pcb->name = memcpy(name, token, strlen(token) + 1);
-    token = strtok(NULL, SEPARATOR);
-    pcb->service_time = (uint32_t)strtoul(token, NULL, 10);
-    pcb->remaining_time = pcb->service_time;
-    token = strtok(NULL, SEPARATOR);
-    pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
-    pcb->memory = NULL;
-    pcb->process = NULL;
-    pcb->state = NEW;
-    pcb->termination_time = 0;
-    return pcb;
-}
-
-void free_pcb(void *data) {
-    /*  Free a pcb_t struct.
-     */
-    pcb_t *pcb = (pcb_t *)data;
-    free(pcb->name);
-    free(pcb);
-}
-
-void print_pcb(void *data) {
-    /*  Print a pcb_t struct.
-     */
-    pcb_t *pcb = (pcb_t *)data;
-    printf("%" PRIu32 " %s %" PRIu32 " %" PRIu16, pcb->arrival_time, pcb->name,
-           pcb->service_time, pcb->memory_size);
-}
-
 void convert_to_big_endian(uint32_t value, char *big_endian) {
     /*  Convert a 32-bit integer to big endian and store it in a char array of
         length 4.
      */
     value = htonl(value);
     memcpy(big_endian, &value, sizeof(value));
-}
-
-process_t *initialise_process(pcb_t *pcb) {
-    /*  Create a process_t struct and fork a process to run the process
-        executable.
-     */
-    process_t *process;
-    process = (process_t *)malloc(sizeof(*process));
-    assert(process);
-    pcb->process = process;
-
-    // create pipes for communication
-    if (pipe(process->to_process) == -1) {
-        perror("pipe");
-        exit(1);
-    }
-    if (pipe(process->to_manager) == -1) {
-        perror("pipe");
-        exit(1);
-    }
-
-    // use fork to create a new process
-    switch (process->pid = fork()) {
-    case -1:
-        // error
-        perror("fork");
-        exit(1);
-
-    case 0:
-        // child process
-        close(process->to_process[1]);
-        close(process->to_manager[0]);
-
-        // redirect stdin and stdout to pipes
-        dup2(process->to_process[0], STDIN_FILENO);
-        dup2(process->to_manager[1], STDOUT_FILENO);
-
-        // execute process executable
-        char *cmd[] = {"./process", pcb->name, NULL};
-        execvp(cmd[0], cmd);
-
-    default:
-        // parent process
-        close(process->to_process[0]);
-        close(process->to_manager[1]);
-    }
-    return process;
-}
-
-void free_process(void *data) {
-    /*  Free a process_t struct.
-     */
-    process_t *process = (process_t *)data;
-    free(process);
-}
-
-void print_process(void *data) {
-    /*  Print a process_t struct.
-     */
-    process_t *process = (process_t *)data;
-    printf("%d", process->pid);
-}
-
-void send_message(process_t *process, char *message) {
-    /*  Send a message to a process.
-     */
-    if (write(process->to_process[1], message, 4) == -1) {
-        perror("write");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void receive_message(process_t *process, char *message, int length) {
-    /*  Receive a message from a process.
-     */
-    if (read(process->to_manager[0], message, length) == -1) {
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void check_process(process_t *process, char *simulation_time) {
-    /*  Check that a process is still running by sending a message
-        and checking that the least significant bit of the message
-        is the same as the output from the process executable.
-     */
-    char response[1] = {0};
-    receive_message(process, response, 1);
-
-    // check response is same as least significant bit of message
-    if (response[0] != simulation_time[3]) {
-        printf("Error: Big Endian ordering did not pass correctly.\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void start_process(process_t *process, char *simulation_time) {
-    /*  Send the simulation time as a message to a process
-        to start the process.
-
-        Check that the process was started correctly by checking
-        that the least significant bit of the message is the same
-        as the output from the process executable.
-     */
-    send_message(process, simulation_time);
-
-    // check that the process was started correctly
-    check_process(process, simulation_time);
-}
-
-void suspend_process(process_t *process, char *simulation_time) {
-    /*  Send a simulation time as a message to a process. Then
-        suspend the process by sending a SIGTSTP signal.
-     */
-    send_message(process, simulation_time);
-
-    // suspend process
-    int wstatus;
-    kill(process->pid, SIGTSTP);
-    pid_t w = waitpid(process->pid, &wstatus, WUNTRACED);
-    if (w == -1) {
-        perror("waitpid");
-        exit(EXIT_FAILURE);
-    }
-    if (!WIFSTOPPED(wstatus)) {
-        printf("Error: Process did not stop.\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void resume_process(process_t *process, char *simulation_time) {
-    /*  Send a simulation time as a message to a process. Then
-        resume the process by sending a SIGCONT signal.
-
-        Check that the process was resumed correctly by checking
-        that the least significant bit of the message is the same
-        as the output from the process executable.
-     */
-    send_message(process, simulation_time);
-
-    // resume process
-    kill(process->pid, SIGCONT);
-
-    // check that the process was resumed correctly
-    check_process(process, simulation_time);
-}
-
-char *terminate_process(process_t *process, char *simulation_time) {
-    /*  Send a simulation time as a message to a process. Then
-        terminate the process by sending a SIGTERM signal.
-
-        Then read a 64 byte string from stdout of process executable
-        and include in execution transcript.
-
-        Return the string.
-     */
-    send_message(process, simulation_time);
-
-    // terminate process
-    kill(process->pid, SIGTERM);
-
-    // read 64 byte string from stdout of process executable
-    char *string = (char *)calloc(64 + 1, sizeof(char));
-    assert(string);
-    receive_message(process, string, 64);
-
-    // free process
-    free_process(process);
-
-    return string;
 }
 
 /* =============================================================================

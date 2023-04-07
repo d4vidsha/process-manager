@@ -5,7 +5,7 @@ CFLAGS = -Wall -g
 LDLIBS = 
 
 # define sets of source files and object files
-SRC = main.c linkedlist.c memorymanager.c
+SRC = main.c pcb.c linkedlist.c memorymanager.c process-api.c
 # OBJ is the same as SRC, just replace .c with .o
 OBJ = $(SRC:.c=.o)
 
