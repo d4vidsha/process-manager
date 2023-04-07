@@ -167,15 +167,15 @@ void run_cycles(list_t *process_table, args_t *args) {
             // should be terminated
             pcb_t *pcb = (pcb_t *)curr->data;
 
-            // decrement service time by the quantum. if service time becomes
-            // negative, set it to 0
-            if (pcb->service_time < quantum) {
-                pcb->service_time = 0;
+            // decrement remaining time by the quantum. if remaining time
+            // becomes negative, set it to 0
+            if (pcb->remaining_time < quantum) {
+                pcb->remaining_time = 0;
             } else {
-                pcb->service_time -= quantum;
+                pcb->remaining_time -= quantum;
             }
 
-            if (pcb->service_time == 0) {
+            if (pcb->remaining_time == 0) {
                 if (DEBUG) {
                     printf("ACTION: Terminating process %s\n", pcb->name);
                 }
@@ -192,6 +192,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                        list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
                 pcb->state = TERMINATED;
+                pcb->termination_time = simulation_time;
                 // task4: terminate process
                 convert_to_big_endian(simulation_time,
                                       big_endian_simulation_time);
@@ -316,9 +317,9 @@ void run_cycles(list_t *process_table, args_t *args) {
                 while (curr) {
                     pcb_t *pcb = (pcb_t *)curr->data;
                     pcb_t *min_pcb = (pcb_t *)min->data;
-                    if (pcb->service_time < min_pcb->service_time) {
+                    if (pcb->remaining_time < min_pcb->remaining_time) {
                         min = curr;
-                    } else if (pcb->service_time == min_pcb->service_time) {
+                    } else if (pcb->remaining_time == min_pcb->remaining_time) {
                         if (pcb->arrival_time < min_pcb->arrival_time) {
                             min = curr;
                         } else if (pcb->arrival_time == min_pcb->arrival_time) {
@@ -341,7 +342,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                     printf("%" PRIu32
                            ",RUNNING,process_name=%s,remaining_time=%" PRIu32
                            "\n",
-                           simulation_time, pcb->name, pcb->service_time);
+                           simulation_time, pcb->name, pcb->remaining_time);
                     move_data(min->data, ready_queue, running_queue);
                     pcb->state = RUNNING;
                     // task4: start process
@@ -395,7 +396,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                 }
                 printf("%" PRIu32
                        ",RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
-                       simulation_time, pcb->name, pcb->service_time);
+                       simulation_time, pcb->name, pcb->remaining_time);
                 move_data(pcb, ready_queue, running_queue);
                 // task4: start process or resume process
                 convert_to_big_endian(simulation_time,
@@ -424,6 +425,14 @@ void run_cycles(list_t *process_table, args_t *args) {
         simulation_time += quantum;
     }
 
+    // performance statistics
+    uint32_t turnaround = average_turnaround_time(finished_queue);
+    float max_overhead = max_time_overhead(finished_queue);
+    float overhead = average_time_overhead(finished_queue);
+    printf("Turnaround time %" PRIu32
+           "\nTime overhead %.2f %.2f\nMakespan %" PRIu32 "\n",
+           turnaround, max_overhead, overhead, simulation_time);
+
     // free linked lists
     free_list(memory, free);
     free_list(submitted_queue, NULL);
@@ -432,6 +441,70 @@ void run_cycles(list_t *process_table, args_t *args) {
     free_list(running_queue, NULL);
     free_list(finished_queue, NULL);
     free(big_endian_simulation_time);
+}
+
+uint32_t average_turnaround_time(list_t *finished_queue) {
+    /*  Average time (in seconds, rounded up to an integer) between the time
+        when the process is completed and when it arrived.
+     */
+    uint32_t turnaround = 0;
+    node_t *curr = finished_queue->head;
+    while (curr != NULL) {
+        pcb_t *pcb = (pcb_t *)curr->data;
+        turnaround += pcb->termination_time - pcb->arrival_time;
+        curr = curr->next;
+    }
+    int total_pcbs = list_len(finished_queue);
+    assert(total_pcbs > 0);
+
+    // get the ceiling of the average: read more at
+    // https://stackoverflow.com/questions/2422712/rounding-integer-division-instead-of-truncating
+    turnaround = (turnaround + total_pcbs - 1) / total_pcbs;
+
+    return turnaround;
+}
+
+float max_time_overhead(list_t *finished_queue) {
+    /*  Maximum time overhead when running a process, where overhead
+        is defined as the turnaround time of the process divided by
+        its service time.
+     */
+    float overhead;
+    float max_overhead = 0;
+    node_t *curr = finished_queue->head;
+    while (curr != NULL) {
+        pcb_t *pcb = (pcb_t *)curr->data;
+        overhead = (pcb->termination_time - pcb->arrival_time) /
+                   (float)pcb->service_time;
+        if (overhead > max_overhead) {
+            max_overhead = overhead;
+        }
+        curr = curr->next;
+    }
+
+    return max_overhead;
+}
+
+float average_time_overhead(list_t *finished_queue) {
+    /*  Average time overhead when running a process, where overhead
+        is defined as the turnaround time of the process divided by
+        its service time.
+     */
+    float overhead = 0;
+    float average_overhead = 0;
+    node_t *curr = finished_queue->head;
+    while (curr != NULL) {
+        pcb_t *pcb = (pcb_t *)curr->data;
+        overhead += (pcb->termination_time - pcb->arrival_time) /
+                    (float)pcb->service_time;
+        curr = curr->next;
+    }
+    int total_pcbs = list_len(finished_queue);
+    assert(total_pcbs > 0);
+
+    average_overhead = overhead / total_pcbs;
+
+    return average_overhead;
 }
 
 char *read_flag(char *flag, const char *const *valid_args, int argc,
@@ -505,11 +578,13 @@ pcb_t *parse_pcb_line(char *line) {
     pcb->name = memcpy(name, token, strlen(token) + 1);
     token = strtok(NULL, SEPARATOR);
     pcb->service_time = (uint32_t)strtoul(token, NULL, 10);
+    pcb->remaining_time = pcb->service_time;
     token = strtok(NULL, SEPARATOR);
     pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
     pcb->memory = NULL;
-    pcb->state = NEW;
     pcb->process = NULL;
+    pcb->state = NEW;
+    pcb->termination_time = 0;
     return pcb;
 }
 
