@@ -190,7 +190,14 @@ void run_cycles(list_t *process_table, args_t *args) {
                        simulation_time, pcb->name,
                        list_len(input_queue) + list_len(ready_queue));
                 move_data(pcb, running_queue, finished_queue);
+                pcb->state = TERMINATED;
                 // task4: terminate process
+                convert_to_big_endian(simulation_time,
+                                      big_endian_simulation_time);
+                char *sha256 = terminate_process(pcb->process,
+                                              big_endian_simulation_time);
+                printf("%" PRIu32 ",FINISHED-PROCESS,process_name=%s,sha=%s\n",
+                       simulation_time, pcb->name, sha256);
             } else {
                 break;
             }
@@ -218,6 +225,9 @@ void run_cycles(list_t *process_table, args_t *args) {
                            pcb->name);
                 }
                 move_data(pcb, submitted_queue, input_queue);
+                pcb->state = NEW;
+                // task4: initialise process
+                initialise_process(pcb);
             } else {
                 // this assumes that the processes are sorted by arrival time
                 break;
@@ -246,6 +256,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                            pcb->name);
                 }
                 move_data(pcb, input_queue, ready_queue);
+                pcb->state = READY;
             }
         } else if (strcmp(args->memory, "best-fit") == 0) {
 
@@ -276,6 +287,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                            ",READY,process_name=%s,assigned_at=%" PRIu16 "\n",
                            simulation_time, pcb->name, pcb->memory->location);
                     move_data(pcb, input_queue, ready_queue);
+                    pcb->state = READY;
                 }
             }
 
@@ -329,7 +341,10 @@ void run_cycles(list_t *process_table, args_t *args) {
                            "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
-                    // task4: create process
+                    pcb->state = RUNNING;
+                    // task4: start process
+                    convert_to_big_endian(simulation_time, big_endian_simulation_time);
+                    start_process(pcb->process, big_endian_simulation_time);
                 }
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
@@ -347,6 +362,10 @@ void run_cycles(list_t *process_table, args_t *args) {
                         printf("ACTION: Suspending process %s\n", pcb->name);
                     }
                     move_data(pcb, running_queue, ready_queue);
+                    pcb->state = SUSPENDED;
+                    // task4: suspend process
+                    convert_to_big_endian(simulation_time, big_endian_simulation_time);
+                    suspend_process(pcb->process, big_endian_simulation_time);
                 }
 
                 // the process at the head of ready queue is chosen to run for
@@ -360,7 +379,18 @@ void run_cycles(list_t *process_table, args_t *args) {
                        ",RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
                        simulation_time, pcb->name, pcb->service_time);
                 move_data(pcb, ready_queue, running_queue);
-                // task4: create process
+                // task4: start process or resume process
+                convert_to_big_endian(simulation_time, big_endian_simulation_time);
+                if (pcb->state == READY) {
+                    start_process(pcb->process, big_endian_simulation_time);
+                } else if (pcb->state == SUSPENDED) {
+                    resume_process(pcb->process, big_endian_simulation_time);
+                } else {
+                    fprintf(stderr, "ERROR: Process %s is in an invalid state for running\n",
+                            pcb->name);
+                    exit(EXIT_FAILURE);
+                }
+                pcb->state = RUNNING;
             }
         }
 
@@ -457,6 +487,7 @@ pcb_t *parse_pcb_line(char *line) {
     token = strtok(NULL, SEPARATOR);
     pcb->memory_size = (uint16_t)strtoul(token, NULL, 10);
     pcb->memory = NULL;
+    pcb->state = NEW;
     pcb->process = NULL;
     return pcb;
 }
@@ -521,7 +552,7 @@ process_t *initialise_process(pcb_t *pcb) {
         dup2(process->to_manager[1], STDOUT_FILENO);
 
         // execute process executable
-        char *cmd[] = {"./process", "-v", pcb->name, NULL};
+        char *cmd[] = {"./process", pcb->name, NULL};
         execvp(cmd[0], cmd);
 
     default:

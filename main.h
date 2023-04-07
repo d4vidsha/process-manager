@@ -27,6 +27,7 @@ typedef struct process_control_block {
     uint32_t service_time;
     uint16_t memory_size;
     block_t *memory;
+    enum { NEW, READY, RUNNING, SUSPENDED, TERMINATED } state;
     process_t *process;
 } pcb_t;
 
