@@ -12,23 +12,59 @@ void create_process(char *simulation_time);
 void suspend_process(char *simulation_time);
 void resume_process(char *simulation_time);
 void terminate_process(char *simulation_time);
+void test_pipe();
 
 int main(void) {
 
-    char simulation_time[4] = {0, 0, 0, 0};
-    uint32_t value = 3215;
-    value = htonl(value);
-    memcpy(simulation_time, &value, sizeof(value));
-    // printf("%02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
+    test_pipe();
 
-    create_process(simulation_time);
+    // char simulation_time[4] = {0, 0, 0, 0};
+    // uint32_t value = 3215;
+    // value = htonl(value);
+    // memcpy(simulation_time, &value, sizeof(value));
+    // // printf("%02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    // //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    // //        (uint8_t)simulation_time[3]);
+
+    // create_process(simulation_time);
 
     return 0;
 }
 
 char *cmd[] = {"./process", "-v", "TEST_PROCESS", NULL};
+
+void test_pipe() {
+    /*  Testing how to pipe.
+     */
+    int fd[2];
+
+    if (pipe(fd) == -1) {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    switch (fork()) {
+
+    case 0: // child
+        close(fd[1]);
+        char output[1];
+        read(fd[0], output, 1);
+        printf("output: %02x\n", (uint8_t)output[0]);
+        read(fd[0], output, 1);
+        printf("output: %02x\n", (uint8_t)output[0]);
+        exit(EXIT_SUCCESS);
+    case -1: // error
+        perror("fork");
+        exit(EXIT_FAILURE);
+    default: // parent
+        close(fd[0]);
+        char input[1] = {0x12};
+        write(fd[1], input, 1);
+        char input2[1] = {0x34};
+        write(fd[1], input2, 1);
+        exit(EXIT_SUCCESS);
+    }
+}
 
 void create_process(char *simulation_time) {
     /*  1. fork() and exec an instance of process.

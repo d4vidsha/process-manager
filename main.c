@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <unistd.h>
+#include <time.h>
 #include "main.h"
 
 const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
@@ -86,7 +87,8 @@ void run_cycles(list_t *process_table, args_t *args) {
     uint32_t simulation_time = 0;
     uint32_t quantum = atoi(args->quantum);
     int num_processes = list_len(process_table);
-    char big_endian_simulation_time[4] = {0, 0, 0, 0};
+    char *big_endian_simulation_time = calloc(4, sizeof(char));
+    assert(big_endian_simulation_time);
 
     // big endian byte order for simulation time
     convert_to_big_endian(simulation_time, big_endian_simulation_time);
@@ -98,13 +100,33 @@ void run_cycles(list_t *process_table, args_t *args) {
                (uint8_t)big_endian_simulation_time[3]);
     }
 
-    // test task 4
-    initialise_process(process_table->head->data);
-    start_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
-    suspend_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
-    resume_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time);
-    free(terminate_process(((pcb_t *)process_table->head->data)->process, big_endian_simulation_time));
-    free_process(((pcb_t *)process_table->head->data)->process);
+    // // test task4
+    // printf("ACTION: Initialising process...\n");
+    // initialise_process(process_table->head->data);
+    // simulation_time = 432;
+    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    // printf("ACTION: Starting process...\n");
+    // start_process(((pcb_t *)process_table->head->data)->process,
+    //               big_endian_simulation_time);
+    // simulation_time += 1;
+    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    // printf("ACTION: Suspending process...\n");
+    // suspend_process(((pcb_t *)process_table->head->data)->process,
+    //                 big_endian_simulation_time);
+    // simulation_time += 1;
+    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    // printf("ACTION: Resuming process...\n");
+    // resume_process(((pcb_t *)process_table->head->data)->process,
+    //                big_endian_simulation_time);
+    // simulation_time += 1;
+    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    // printf("ACTION: Terminating process...\n");
+    // char *out = terminate_process(((pcb_t *)process_table->head->data)->process,
+    //                               big_endian_simulation_time);
+    // printf("%s\n", out);
+    // free(out);
+    // free_process(((pcb_t *)process_table->head->data)->process);
+    // simulation_time = 0;
 
     // copy processes from process table to submitted queue
     for (node_t *curr = process_table->head; curr != NULL; curr = curr->next) {
@@ -307,7 +329,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                            "\n",
                            simulation_time, pcb->name, pcb->service_time);
                     move_data(min->data, ready_queue, running_queue);
-                    // task4: create process                    
+                    // task4: create process
                 }
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
@@ -358,6 +380,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     free_list(ready_queue, NULL);
     free_list(running_queue, NULL);
     free_list(finished_queue, NULL);
+    free(big_endian_simulation_time);
 }
 
 char *read_flag(char *flag, const char *const *valid_args, int argc,
@@ -490,12 +513,21 @@ process_t *initialise_process(pcb_t *pcb) {
 
     case 0:
         // child process
+        close(process->to_process[1]);
+        close(process->to_manager[0]);
+        
+        // redirect stdin and stdout to pipes
+        dup2(process->to_process[0], STDIN_FILENO);
+        dup2(process->to_manager[1], STDOUT_FILENO);
+
+        // execute process executable
         char *cmd[] = {"./process", "-v", pcb->name, NULL};
         execvp(cmd[0], cmd);
 
     default:
         // parent process
-        break;
+        close(process->to_process[0]);
+        close(process->to_manager[1]);
     }
     return process;
 }
@@ -517,16 +549,16 @@ void print_process(void *data) {
 void send_message(process_t *process, char *message) {
     /*  Send a message to a process.
      */
-    if (write(process->to_process[1], message, strlen(message)) == -1) {
+    if (write(process->to_process[1], message, 4) == -1) {
         perror("write");
         exit(EXIT_FAILURE);
     }
 }
 
-void receive_message(process_t *process, char *message) {
+void receive_message(process_t *process, char *message, int length) {
     /*  Receive a message from a process.
      */
-    if (read(process->to_manager[0], message, strlen(message)) == -1) {
+    if (read(process->to_manager[0], message, length) == -1) {
         perror("read");
         exit(EXIT_FAILURE);
     }
@@ -537,14 +569,18 @@ void check_process(process_t *process, char *simulation_time) {
         and checking that the least significant bit of the message
         is the same as the output from the process executable.
      */
-    // char response[1] = {0};
-    // receive_message(process, response);
+    char response[1] = {0};
+    receive_message(process, response, 1);
+    // printf("Simulation time: %02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
+    // printf("Response: %02x\n", (uint8_t)response[0]);
 
-    // // check response is same as least significant bit of message
-    // if (response[0] != simulation_time[strlen(simulation_time) - 1]) {
-    //     printf("Error: Big Endian ordering did not pass correctly.\n");
-    //     exit(EXIT_FAILURE);
-    // }
+    // check response is same as least significant bit of message
+    if (response[0] != simulation_time[3]) {
+        printf("Error: Big Endian ordering did not pass correctly.\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void start_process(process_t *process, char *simulation_time) {
@@ -555,6 +591,9 @@ void start_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
+    // printf("ACTION: Starting process with simulation time %02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // check that the process was started correctly
@@ -565,7 +604,10 @@ void suspend_process(process_t *process, char *simulation_time) {
     /*  Send a simulation time as a message to a process. Then
         suspend the process by sending a SIGSTOP signal.
      */
-    send_message(process, simulation_time);
+    // printf("ACTION: Suspending process with simulation time %02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
+    // send_message(process, simulation_time);
 
     // suspend process
     int wstatus;
@@ -583,6 +625,9 @@ void resume_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
+    // printf("ACTION: Resuming process with simulation time %02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // resume process
@@ -601,6 +646,9 @@ char *terminate_process(process_t *process, char *simulation_time) {
 
         Return the string.
      */
+    // printf("ACTION: Terminating process with simulation time %02x %02x %02x %02x\n", (uint8_t)simulation_time[0],
+    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
+    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // terminate process
@@ -609,7 +657,7 @@ char *terminate_process(process_t *process, char *simulation_time) {
     // read 64 byte string from stdout of process executable
     char *string = (char *)calloc(64, sizeof(char));
     assert(string);
-    receive_message(process, string);
+    receive_message(process, string, 64);
 
     return string;
 }

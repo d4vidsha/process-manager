@@ -44,7 +44,7 @@ process_t *initialise_process(pcb_t *pcb);
 void free_process(void *data);
 void print_process(void *data);
 void send_message(process_t *process, char *message);
-void receive_message(process_t *process, char *message);
+void receive_message(process_t *process, char *message, int length);
 void check_process(process_t *process, char *simulation_time);
 void start_process(process_t *process, char *simulation_time);
 void suspend_process(process_t *process, char *simulation_time);
