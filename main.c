@@ -438,6 +438,7 @@ float max_time_overhead(list_t *finished_queue) {
     node_t *curr = finished_queue->head;
     while (curr != NULL) {
         pcb_t *pcb = (pcb_t *)curr->data;
+        assert(pcb->service_time > 0);
         overhead = (pcb->termination_time - pcb->arrival_time) /
                    (float)pcb->service_time;
         if (overhead > max_overhead) {
@@ -459,6 +460,7 @@ float average_time_overhead(list_t *finished_queue) {
     node_t *curr = finished_queue->head;
     while (curr != NULL) {
         pcb_t *pcb = (pcb_t *)curr->data;
+        assert(pcb->service_time > 0);
         overhead += (pcb->termination_time - pcb->arrival_time) /
                     (float)pcb->service_time;
         curr = curr->next;
