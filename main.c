@@ -100,35 +100,6 @@ void run_cycles(list_t *process_table, args_t *args) {
                (uint8_t)big_endian_simulation_time[3]);
     }
 
-    // // test task4
-    // printf("ACTION: Initialising process...\n");
-    // initialise_process(process_table->head->data);
-    // simulation_time = 432;
-    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
-    // printf("ACTION: Starting process...\n");
-    // start_process(((pcb_t *)process_table->head->data)->process,
-    //               big_endian_simulation_time);
-    // simulation_time += 1;
-    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
-    // printf("ACTION: Suspending process...\n");
-    // suspend_process(((pcb_t *)process_table->head->data)->process,
-    //                 big_endian_simulation_time);
-    // simulation_time += 1;
-    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
-    // printf("ACTION: Resuming process...\n");
-    // resume_process(((pcb_t *)process_table->head->data)->process,
-    //                big_endian_simulation_time);
-    // simulation_time += 1;
-    // convert_to_big_endian(simulation_time, big_endian_simulation_time);
-    // printf("ACTION: Terminating process...\n");
-    // char *out = terminate_process(((pcb_t
-    // *)process_table->head->data)->process,
-    //                               big_endian_simulation_time);
-    // printf("%s\n", out);
-    // free(out);
-    // free_process(((pcb_t *)process_table->head->data)->process);
-    // simulation_time = 0;
-
     // copy processes from process table to submitted queue
     for (node_t *curr = process_table->head; curr != NULL; curr = curr->next) {
         pcb_t *pcb = (pcb_t *)curr->data;
@@ -457,8 +428,7 @@ uint32_t average_turnaround_time(list_t *finished_queue) {
     int total_pcbs = list_len(finished_queue);
     assert(total_pcbs > 0);
 
-    // get the ceiling of the average: read more at
-    // https://stackoverflow.com/questions/2422712/rounding-integer-division-instead-of-truncating
+    // read more at https://stackoverflow.com/a/2422722
     turnaround = (turnaround + total_pcbs - 1) / total_pcbs;
 
     return turnaround;
@@ -698,11 +668,6 @@ void check_process(process_t *process, char *simulation_time) {
      */
     char response[1] = {0};
     receive_message(process, response, 1);
-    // printf("Simulation time: %02x %02x %02x %02x\n",
-    // (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
-    // printf("Response: %02x\n", (uint8_t)response[0]);
 
     // check response is same as least significant bit of message
     if (response[0] != simulation_time[3]) {
@@ -719,10 +684,6 @@ void start_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
-    // printf("ACTION: Starting process with simulation time %02x %02x %02x
-    // %02x\n", (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // check that the process was started correctly
@@ -733,10 +694,6 @@ void suspend_process(process_t *process, char *simulation_time) {
     /*  Send a simulation time as a message to a process. Then
         suspend the process by sending a SIGTSTP signal.
      */
-    // printf("ACTION: Suspending process with simulation time %02x %02x %02x
-    // %02x\n", (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // suspend process
@@ -761,10 +718,6 @@ void resume_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
-    // printf("ACTION: Resuming process with simulation time %02x %02x %02x
-    // %02x\n", (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // resume process
@@ -783,10 +736,6 @@ char *terminate_process(process_t *process, char *simulation_time) {
 
         Return the string.
      */
-    // printf("ACTION: Terminating process with simulation time %02x %02x %02x
-    // %02x\n", (uint8_t)simulation_time[0],
-    //        (uint8_t)simulation_time[1], (uint8_t)simulation_time[2],
-    //        (uint8_t)simulation_time[3]);
     send_message(process, simulation_time);
 
     // terminate process
