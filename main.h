@@ -21,6 +21,7 @@ typedef struct cycle {
     uint32_t quantum;
     uint32_t simulation_time;
     char *big_endian;
+    args_t *args;
     list_t *memory;
     list_t *submitted_queue;
     list_t *input_queue;
@@ -32,10 +33,11 @@ typedef struct cycle {
 /* function prototypes ====================================================== */
 void process_manager(args_t *args);
 void run_cycles(list_t *process_table, args_t *args);
-void run_cycle(cycle_t *cycle, args_t *args);
-cycle_t *create_cycle(uint32_t quantum);
-void free_cycle(cycle_t *cycle);
-void print_performance_statistics(cycle_t *cycle);
+void run_cycle(cycle_t *c);
+void check_termination(cycle_t *c);
+cycle_t *create_cycle(args_t *args);
+void free_cycle(cycle_t *c);
+void print_performance_statistics(cycle_t *c);
 uint32_t average_turnaround_time(list_t *finished_queue);
 float max_time_overhead(list_t *finished_queue);
 float average_time_overhead(list_t *finished_queue);

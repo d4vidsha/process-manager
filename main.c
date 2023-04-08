@@ -72,7 +72,7 @@ void run_cycles(list_t *process_table, args_t *args) {
         processes and the given arguments.
     */
     int total_processes = list_len(process_table);
-    cycle_t *c = create_cycle((uint32_t)atoi(args->quantum));
+    cycle_t *c = create_cycle(args);
 
     // copy processes from process table to submitted queue
     copy_list(process_table, c->submitted_queue);
@@ -95,7 +95,7 @@ void run_cycles(list_t *process_table, args_t *args) {
             print_list(c->finished_queue, print_pcb);
         }
 
-        run_cycle(c, args);
+        run_cycle(c);
 
         // when the finished queue contains all processes, the process manager
         // can terminate
@@ -111,67 +111,13 @@ void run_cycles(list_t *process_table, args_t *args) {
     free_cycle(c);
 }
 
-void run_cycle(cycle_t *cycle, args_t *args) {
+void run_cycle(cycle_t *c) {
     /*  This function runs a single cycle of the simulation.
      */
-    uint32_t simulation_time = cycle->simulation_time;
-    uint32_t quantum = cycle->quantum;
-    list_t *memory = cycle->memory;
-    list_t *submitted_queue = cycle->submitted_queue;
-    list_t *input_queue = cycle->input_queue;
-    list_t *ready_queue = cycle->ready_queue;
-    list_t *running_queue = cycle->running_queue;
-    list_t *finished_queue = cycle->finished_queue;
 
     // if current running process (if any) has completed, terminate it and
     // deallocate its memory
-    while (TRUE) {
-        node_t *curr = running_queue->head;
-
-        // if there are no more running processes, break
-        if (curr == NULL) {
-            break;
-        }
-
-        // assuming there are more running processes, check if they
-        // should be terminated
-        pcb_t *pcb = (pcb_t *)curr->data;
-
-        // decrement remaining time by the quantum. if remaining time
-        // becomes negative, set it to 0
-        if (pcb->remaining_time < quantum) {
-            pcb->remaining_time = 0;
-        } else {
-            pcb->remaining_time -= quantum;
-        }
-
-        if (pcb->remaining_time == 0) {
-            if (DEBUG) {
-                printf("ACTION: Terminating process %s\n", pcb->name);
-            }
-            if (strcmp(args->memory, "best-fit") == 0) {
-                mm_free(memory, pcb->memory);
-                pcb->memory = NULL;
-                if (DEBUG) {
-                    print_list(memory, print_block);
-                }
-            }
-            printf("%" PRIu32 ",FINISHED,process_name=%s,proc_remaining=%d\n",
-                   simulation_time, pcb->name,
-                   list_len(input_queue) + list_len(ready_queue));
-            move_data(pcb, running_queue, finished_queue);
-            pcb->state = TERMINATED;
-            pcb->termination_time = simulation_time;
-            // task4: terminate process
-            big_endian(simulation_time, cycle->big_endian);
-            char *sha256 = terminate_process(pcb->process, cycle->big_endian);
-            printf("%" PRIu32 ",FINISHED-PROCESS,process_name=%s,sha=%s\n",
-                   simulation_time, pcb->name, sha256);
-            free(sha256);
-        } else {
-            break;
-        }
-    }
+    check_termination(c);
 
     // identify all processes that have been submitted since the last cycle
     // occurred and add them to the input queue in the order they appear
@@ -179,7 +125,7 @@ void run_cycle(cycle_t *cycle, args_t *args) {
     // to the system if its arrival time is less than or equal to the
     // current simulation time
     while (TRUE) {
-        node_t *curr = submitted_queue->head;
+        node_t *curr = c->submitted_queue->head;
 
         // if there are no more submittable processes, break
         if (curr == NULL) {
@@ -189,11 +135,11 @@ void run_cycle(cycle_t *cycle, args_t *args) {
         // assuming there are more submittable processes, check if they
         // should be added to the input queue
         pcb_t *pcb = (pcb_t *)curr->data;
-        if (pcb->arrival_time <= simulation_time) {
+        if (pcb->arrival_time <= c->simulation_time) {
             if (DEBUG) {
                 printf("ACTION: Adding process %s to input queue\n", pcb->name);
             }
-            move_data(pcb, submitted_queue, input_queue);
+            move_data(pcb, c->submitted_queue, c->input_queue);
             pcb->state = NEW;
             // task4: initialise process
             initialise_process(pcb);
@@ -208,9 +154,9 @@ void run_cycle(cycle_t *cycle, args_t *args) {
     // processes that are ready to run
     // memory allocation can be done in one of two ways:
     // infinite or best-fit
-    if (strcmp(args->memory, "infinite") == 0) {
+    if (strcmp(c->args->memory, "infinite") == 0) {
         while (TRUE) {
-            node_t *curr = input_queue->head;
+            node_t *curr = c->input_queue->head;
 
             // if there are no more input processes, break
             if (curr == NULL) {
@@ -223,14 +169,14 @@ void run_cycle(cycle_t *cycle, args_t *args) {
             if (DEBUG) {
                 printf("ACTION: Adding process %s to ready queue\n", pcb->name);
             }
-            move_data(pcb, input_queue, ready_queue);
+            move_data(pcb, c->input_queue, c->ready_queue);
             pcb->state = READY;
         }
-    } else if (strcmp(args->memory, "best-fit") == 0) {
+    } else if (strcmp(c->args->memory, "best-fit") == 0) {
 
         // copy input queue to a temporary queue
         list_t *temp_queue = create_empty_list();
-        for (node_t *curr = input_queue->head; curr != NULL;
+        for (node_t *curr = c->input_queue->head; curr != NULL;
              curr = curr->next) {
             pcb_t *pcb = (pcb_t *)curr->data;
             append(temp_queue, pcb);
@@ -241,7 +187,7 @@ void run_cycle(cycle_t *cycle, args_t *args) {
             pcb_t *pcb = (pcb_t *)curr->data;
 
             // try to allocate memory
-            pcb->memory = (block_t *)mm_malloc(memory, pcb->memory_size);
+            pcb->memory = (block_t *)mm_malloc(c->memory, pcb->memory_size);
             if (pcb->memory) {
                 // if memory was successfully allocated, move the
                 // process to the ready queue
@@ -252,8 +198,8 @@ void run_cycle(cycle_t *cycle, args_t *args) {
                 }
                 printf("%" PRIu32 ",READY,process_name=%s,assigned_at=%" PRIu16
                        "\n",
-                       simulation_time, pcb->name, pcb->memory->location);
-                move_data(pcb, input_queue, ready_queue);
+                       c->simulation_time, pcb->name, pcb->memory->location);
+                move_data(pcb, c->input_queue, c->ready_queue);
                 pcb->state = READY;
             }
         }
@@ -266,17 +212,17 @@ void run_cycle(cycle_t *cycle, args_t *args) {
     // Depending on the scheduling algorithm, this may be the process
     // that has been previously running, or a ready process which
     // has not been previously running
-    if (strcmp(args->scheduler, "SJF") == 0) {
+    if (strcmp(c->args->scheduler, "SJF") == 0) {
         // find the process with the shortest service time
         // if two processes have the same service time, choose the
         // process that arrived first
         // if two processes have the same service time and arrival
         // time, choose the process whose name comes first
         // lexicographically
-        if (running_queue->head == NULL) {
+        if (c->running_queue->head == NULL) {
             // only add a process to running queue if there is no
             // running process
-            node_t *curr = ready_queue->head;
+            node_t *curr = c->ready_queue->head;
             node_t *min = curr;
             while (curr) {
                 pcb_t *pcb = (pcb_t *)curr->data;
@@ -305,64 +251,64 @@ void run_cycle(cycle_t *cycle, args_t *args) {
                 }
                 printf("%" PRIu32
                        ",RUNNING,process_name=%s,remaining_time=%" PRIu32 "\n",
-                       simulation_time, pcb->name, pcb->remaining_time);
-                move_data(min->data, ready_queue, running_queue);
+                       c->simulation_time, pcb->name, pcb->remaining_time);
+                move_data(min->data, c->ready_queue, c->running_queue);
                 pcb->state = RUNNING;
                 // task4: start process
-                big_endian(simulation_time, cycle->big_endian);
-                start_process(pcb->process, cycle->big_endian);
+                big_endian(c->simulation_time, c->big_endian);
+                start_process(pcb->process, c->big_endian);
             }
         } else {
             // if there is a process currently running, continue to run
             // task4: continue process
-            pcb_t *pcb = (pcb_t *)running_queue->head->data;
-            big_endian(simulation_time, cycle->big_endian);
-            continue_process(pcb->process, cycle->big_endian);
+            pcb_t *pcb = (pcb_t *)c->running_queue->head->data;
+            big_endian(c->simulation_time, c->big_endian);
+            continue_process(pcb->process, c->big_endian);
         }
-    } else if (strcmp(args->scheduler, "RR") == 0) {
+    } else if (strcmp(c->args->scheduler, "RR") == 0) {
         // if there are no processes in the ready queue, the process
         // that is currently running continues to run
-        if (ready_queue->head == NULL) {
+        if (c->ready_queue->head == NULL) {
             // let the process continue to run
             // task4: continue process
-            if (running_queue->head != NULL) {
-                pcb_t *pcb = (pcb_t *)running_queue->head->data;
-                big_endian(simulation_time, cycle->big_endian);
-                continue_process(pcb->process, cycle->big_endian);
+            if (c->running_queue->head != NULL) {
+                pcb_t *pcb = (pcb_t *)c->running_queue->head->data;
+                big_endian(c->simulation_time, c->big_endian);
+                continue_process(pcb->process, c->big_endian);
             }
         } else {
             // if there is a process currently running, suspend and add it
             // to the end of the ready queue, assuming only one running
             // process exists at a time
-            if (running_queue->head != NULL) {
-                pcb_t *pcb = (pcb_t *)running_queue->head->data;
+            if (c->running_queue->head != NULL) {
+                pcb_t *pcb = (pcb_t *)c->running_queue->head->data;
                 if (DEBUG) {
                     printf("ACTION: Suspending process %s\n", pcb->name);
                 }
-                move_data(pcb, running_queue, ready_queue);
+                move_data(pcb, c->running_queue, c->ready_queue);
                 pcb->state = SUSPENDED;
                 // task4: suspend process
-                big_endian(simulation_time, cycle->big_endian);
-                suspend_process(pcb->process, cycle->big_endian);
+                big_endian(c->simulation_time, c->big_endian);
+                suspend_process(pcb->process, c->big_endian);
             }
 
             // the process at the head of ready queue is chosen to run for
             // one quantum
-            pcb_t *pcb = (pcb_t *)ready_queue->head->data;
+            pcb_t *pcb = (pcb_t *)c->ready_queue->head->data;
             if (DEBUG) {
                 printf("ACTION: Adding process %s to running queue\n",
                        pcb->name);
             }
             printf("%" PRIu32 ",RUNNING,process_name=%s,remaining_time=%" PRIu32
                    "\n",
-                   simulation_time, pcb->name, pcb->remaining_time);
-            move_data(pcb, ready_queue, running_queue);
+                   c->simulation_time, pcb->name, pcb->remaining_time);
+            move_data(pcb, c->ready_queue, c->running_queue);
             // task4: start process or resume process
-            big_endian(simulation_time, cycle->big_endian);
+            big_endian(c->simulation_time, c->big_endian);
             if (pcb->state == READY) {
-                start_process(pcb->process, cycle->big_endian);
+                start_process(pcb->process, c->big_endian);
             } else if (pcb->state == SUSPENDED) {
-                continue_process(pcb->process, cycle->big_endian);
+                continue_process(pcb->process, c->big_endian);
             } else {
                 fprintf(stderr,
                         "ERROR: Process %s is in an invalid state for "
@@ -375,51 +321,102 @@ void run_cycle(cycle_t *cycle, args_t *args) {
     }
 }
 
-cycle_t *create_cycle(uint32_t quantum) {
+void check_termination(cycle_t *c) {
+    /*  If current running process (if any) has completed, terminate it and
+        deallocate its memory.
+     */
+    while (TRUE) {
+        node_t *curr = c->running_queue->head;
+
+        // if there are no more running processes, break
+        if (curr == NULL) {
+            break;
+        }
+
+        // assuming there are more running processes, check if they
+        // should be terminated
+        pcb_t *pcb = (pcb_t *)curr->data;
+
+        // decrement remaining time by the quantum. if remaining time
+        // becomes negative, set it to 0
+        if (pcb->remaining_time < c->quantum) {
+            pcb->remaining_time = 0;
+        } else {
+            pcb->remaining_time -= c->quantum;
+        }
+
+        if (pcb->remaining_time == 0) {
+            if (DEBUG) {
+                printf("ACTION: Terminating process %s\n", pcb->name);
+            }
+            if (strcmp(c->args->memory, "best-fit") == 0) {
+                mm_free(c->memory, pcb->memory);
+                pcb->memory = NULL;
+            }
+            printf("%" PRIu32 ",FINISHED,process_name=%s,proc_remaining=%d\n",
+                   c->simulation_time, pcb->name,
+                   list_len(c->input_queue) + list_len(c->ready_queue));
+            move_data(pcb, c->running_queue, c->finished_queue);
+            pcb->state = TERMINATED;
+            pcb->termination_time = c->simulation_time;
+            // task4: terminate process
+            big_endian(c->simulation_time, c->big_endian);
+            char *sha256 = terminate_process(pcb->process, c->big_endian);
+            printf("%" PRIu32 ",FINISHED-PROCESS,process_name=%s,sha=%s\n",
+                   c->simulation_time, pcb->name, sha256);
+            free(sha256);
+        } else {
+            break;
+        }
+    }
+}
+
+cycle_t *create_cycle(args_t *args) {
     /*  Create a cycle struct.
      */
-    cycle_t *cycle;
-    cycle = (cycle_t *)malloc(sizeof(*cycle));
-    assert(cycle);
+    cycle_t *c;
+    c = (cycle_t *)malloc(sizeof(*c));
+    assert(c);
 
     // initialise the cycle
-    cycle->quantum = quantum;
-    cycle->simulation_time = 0;
-    cycle->big_endian = calloc(BIG_ENDIAN_BYTES, sizeof(char));
-    assert(cycle->big_endian);
-    cycle->memory = mm_init(MAX_MEMORY);
-    cycle->submitted_queue = create_empty_list();
-    cycle->input_queue = create_empty_list();
-    cycle->ready_queue = create_empty_list();
-    cycle->running_queue = create_empty_list();
-    cycle->finished_queue = create_empty_list();
+    c->quantum = (uint32_t)atoi(args->quantum);
+    c->simulation_time = 0;
+    c->big_endian = calloc(BIG_ENDIAN_BYTES, sizeof(char));
+    assert(c->big_endian);
+    c->args = args;
+    c->memory = mm_init(MAX_MEMORY);
+    c->submitted_queue = create_empty_list();
+    c->input_queue = create_empty_list();
+    c->ready_queue = create_empty_list();
+    c->running_queue = create_empty_list();
+    c->finished_queue = create_empty_list();
 
-    return cycle;
+    return c;
 }
 
-void free_cycle(cycle_t *cycle) {
+void free_cycle(cycle_t *c) {
     /*  Free a cycle struct.
      */
-    free(cycle->big_endian);
+    free(c->big_endian);
     // assume the memory manager has no more memory allocated
-    free_list(cycle->memory, free);
-    free_list(cycle->submitted_queue, NULL);
-    free_list(cycle->input_queue, NULL);
-    free_list(cycle->ready_queue, NULL);
-    free_list(cycle->running_queue, NULL);
-    free_list(cycle->finished_queue, NULL);
-    free(cycle);
+    free_list(c->memory, free);
+    free_list(c->submitted_queue, NULL);
+    free_list(c->input_queue, NULL);
+    free_list(c->ready_queue, NULL);
+    free_list(c->running_queue, NULL);
+    free_list(c->finished_queue, NULL);
+    free(c);
 }
 
-void print_performance_statistics(cycle_t *cycle) {
+void print_performance_statistics(cycle_t *c) {
     /*  Print the turnaround time, time overhead and makespan.
      */
     printf("Turnaround time %" PRIu32
            "\nTime overhead %.2f %.2f\nMakespan %" PRIu32 "\n",
-           average_turnaround_time(cycle->finished_queue),
-           max_time_overhead(cycle->finished_queue),
-           average_time_overhead(cycle->finished_queue),
-           cycle->simulation_time);
+           average_turnaround_time(c->finished_queue),
+           max_time_overhead(c->finished_queue),
+           average_time_overhead(c->finished_queue),
+           c->simulation_time);
 }
 
 uint32_t average_turnaround_time(list_t *finished_queue) {
