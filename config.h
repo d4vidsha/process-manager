@@ -25,6 +25,10 @@
  */
 #define IMPLEMENTS_REAL_PROCESS
 
+/*  Number of Big Endian bytes.
+ */
+#define BIG_ENDIAN_BYTES 4
+
 #endif
 /* =============================================================================
    Written by David Sha.

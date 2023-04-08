@@ -252,6 +252,16 @@ int cmp_addr(void *a, void *b) {
     return a != b;
 }
 
+void copy_list(list_t *from, list_t *to) {
+    /*  Copy the data from one list to another. The data is not copied, only
+        the pointers to the data are copied.
+     */
+    for (node_t *curr = from->head; curr; curr = curr->next) {
+        void *data = curr->data;
+        append(to, data);
+    }
+}
+
 /* =============================================================================
    Written by David Sha.
    - Originally written for COMP20003 Assignment 2, 2022, altered to fit

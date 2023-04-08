@@ -31,6 +31,7 @@ list_t *insert_prev(list_t *list, node_t *node, void *data);
 list_t *insert_next(list_t *list, node_t *node, void *data);
 void *find_node(list_t *list, void *data, int (*cmp)(void *, void *));
 int cmp_addr(void *a, void *b);
+void copy_list(list_t *from, list_t *to);
 
 #endif
 /* =============================================================================
