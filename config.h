@@ -29,6 +29,10 @@
  */
 #define BIG_ENDIAN_BYTES 4
 
+/*  String length of SHA256 hash.
+ */
+#define SHA256_LENGTH 64
+
 #endif
 /* =============================================================================
    Written by David Sha.

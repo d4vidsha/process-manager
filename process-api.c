@@ -4,26 +4,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "config.h"
 #include "process-api.h"
-
-void free_process(void *data) {
-    /*  Free a process_t struct.
-     */
-    process_t *process = (process_t *)data;
-    free(process);
-}
-
-void print_process(void *data) {
-    /*  Print a process_t struct.
-     */
-    process_t *process = (process_t *)data;
-    printf("%d", process->pid);
-}
 
 void send_message(process_t *process, char *message) {
     /*  Send a message to a process.
      */
-    if (write(process->to_process[1], message, 4) == -1) {
+    if (write(process->to_process[1], message, BIG_ENDIAN_BYTES) == -1) {
         perror("write");
         exit(EXIT_FAILURE);
     }
@@ -47,7 +34,7 @@ void check_process(process_t *process, char *simulation_time) {
     receive_message(process, response, 1);
 
     // check response is same as least significant bit of message
-    if (response[0] != simulation_time[3]) {
+    if (response[0] != simulation_time[BIG_ENDIAN_BYTES - 1]) {
         printf("Error: Big Endian ordering did not pass correctly.\n");
         exit(EXIT_FAILURE);
     }
@@ -111,7 +98,7 @@ char *terminate_process(process_t *process, char *simulation_time) {
         Then read a 64 byte string from stdout of process executable
         and include in execution transcript.
 
-        Return the string.
+        Return the string and free the process.
      */
     send_message(process, simulation_time);
 
@@ -119,12 +106,12 @@ char *terminate_process(process_t *process, char *simulation_time) {
     kill(process->pid, SIGTERM);
 
     // read 64 byte string from stdout of process executable
-    char *string = (char *)calloc(64 + 1, sizeof(char));
+    char *string = (char *)calloc(SHA256_LENGTH + 1, sizeof(char));
     assert(string);
-    receive_message(process, string, 64);
+    receive_message(process, string, SHA256_LENGTH);
 
     // free process
-    free_process(process);
+    free(process);
 
     return string;
 }
