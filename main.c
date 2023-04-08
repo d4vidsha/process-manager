@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     assert(args->memory != NULL);
     assert(args->quantum != NULL);
 
-    // run simulation
+    // run simulation via the process manager
     process_manager(args);
     free(args);
 
