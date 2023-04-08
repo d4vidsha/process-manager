@@ -34,7 +34,12 @@ typedef struct cycle {
 void process_manager(args_t *args);
 void run_cycles(list_t *process_table, args_t *args);
 void run_cycle(cycle_t *c);
-void check_termination(cycle_t *c);
+void manage_termination(cycle_t *c);
+void manage_arrival(cycle_t *c);
+void infinite(cycle_t *c);
+void bestfit(cycle_t *c);
+void sjf(cycle_t *c);
+void rr(cycle_t *c);
 cycle_t *create_cycle(args_t *args);
 void free_cycle(cycle_t *c);
 void print_performance_statistics(cycle_t *c);
