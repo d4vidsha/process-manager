@@ -26,7 +26,7 @@ char *read_flag(char *flag, const char *const *valid_args, int argc,
 args_t *parse_args(int argc, char *argv[]);
 void process_manager(args_t *args);
 void run_cycles(list_t *submitted_pcbs, args_t *args);
-void convert_to_big_endian(uint32_t value, char *big_endian);
+void big_endian(uint32_t value, char *big_endian);
 
 #endif
 /* =============================================================================

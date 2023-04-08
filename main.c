@@ -85,7 +85,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     assert(big_endian_simulation_time);
 
     // big endian byte order for simulation time
-    convert_to_big_endian(simulation_time, big_endian_simulation_time);
+    big_endian(simulation_time, big_endian_simulation_time);
     if (DEBUG) {
         printf("INFO: Big Endian simulation time: %02x %02x %02x %02x\n",
                (uint8_t)big_endian_simulation_time[0],
@@ -159,7 +159,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                 pcb->state = TERMINATED;
                 pcb->termination_time = simulation_time;
                 // task4: terminate process
-                convert_to_big_endian(simulation_time,
+                big_endian(simulation_time,
                                       big_endian_simulation_time);
                 char *sha256 =
                     terminate_process(pcb->process, big_endian_simulation_time);
@@ -311,7 +311,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                     move_data(min->data, ready_queue, running_queue);
                     pcb->state = RUNNING;
                     // task4: start process
-                    convert_to_big_endian(simulation_time,
+                    big_endian(simulation_time,
                                           big_endian_simulation_time);
                     start_process(pcb->process, big_endian_simulation_time);
                 }
@@ -319,9 +319,9 @@ void run_cycles(list_t *process_table, args_t *args) {
                 // if there is a process currently running, continue to run
                 // task4: continue process
                 pcb_t *pcb = (pcb_t *)running_queue->head->data;
-                convert_to_big_endian(simulation_time,
+                big_endian(simulation_time,
                                       big_endian_simulation_time);
-                resume_process(pcb->process, big_endian_simulation_time);
+                continue_process(pcb->process, big_endian_simulation_time);
             }
         } else if (strcmp(args->scheduler, "RR") == 0) {
             // if there are no processes in the ready queue, the process
@@ -331,9 +331,9 @@ void run_cycles(list_t *process_table, args_t *args) {
                 // task4: continue process
                 if (running_queue->head != NULL) {
                     pcb_t *pcb = (pcb_t *)running_queue->head->data;
-                    convert_to_big_endian(simulation_time,
+                    big_endian(simulation_time,
                                           big_endian_simulation_time);
-                    resume_process(pcb->process, big_endian_simulation_time);
+                    continue_process(pcb->process, big_endian_simulation_time);
                 }
             } else {
                 // if there is a process currently running, suspend and add it
@@ -347,7 +347,7 @@ void run_cycles(list_t *process_table, args_t *args) {
                     move_data(pcb, running_queue, ready_queue);
                     pcb->state = SUSPENDED;
                     // task4: suspend process
-                    convert_to_big_endian(simulation_time,
+                    big_endian(simulation_time,
                                           big_endian_simulation_time);
                     suspend_process(pcb->process, big_endian_simulation_time);
                 }
@@ -364,12 +364,12 @@ void run_cycles(list_t *process_table, args_t *args) {
                        simulation_time, pcb->name, pcb->remaining_time);
                 move_data(pcb, ready_queue, running_queue);
                 // task4: start process or resume process
-                convert_to_big_endian(simulation_time,
+                big_endian(simulation_time,
                                       big_endian_simulation_time);
                 if (pcb->state == READY) {
                     start_process(pcb->process, big_endian_simulation_time);
                 } else if (pcb->state == SUSPENDED) {
-                    resume_process(pcb->process, big_endian_simulation_time);
+                    continue_process(pcb->process, big_endian_simulation_time);
                 } else {
                     fprintf(stderr,
                             "ERROR: Process %s is in an invalid state for "
@@ -525,9 +525,9 @@ args_t *parse_args(int argc, char *argv[]) {
     return args;
 }
 
-void convert_to_big_endian(uint32_t value, char *big_endian) {
-    /*  Convert a 32-bit integer to big endian and store it in a char array of
-        length 4.
+void big_endian(uint32_t value, char *big_endian) {
+    /*  Convert a 32-bit integer to big endian and store it in a 
+        char array of length 4.
      */
     value = htonl(value);
     memcpy(big_endian, &value, sizeof(value));

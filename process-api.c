@@ -87,20 +87,20 @@ void suspend_process(process_t *process, char *simulation_time) {
     }
 }
 
-void resume_process(process_t *process, char *simulation_time) {
+void continue_process(process_t *process, char *simulation_time) {
     /*  Send a simulation time as a message to a process. Then
-        resume the process by sending a SIGCONT signal.
+        resume/continue the process by sending a SIGCONT signal.
 
-        Check that the process was resumed correctly by checking
+        Check that the process was continue correctly by checking
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
     send_message(process, simulation_time);
 
-    // resume process
+    // continue process
     kill(process->pid, SIGCONT);
 
-    // check that the process was resumed correctly
+    // check that the process was continue correctly
     check_process(process, simulation_time);
 }
 
