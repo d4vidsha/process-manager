@@ -1,6 +1,9 @@
 #ifndef _PROCESS_API_H_
 #define _PROCESS_API_H_
 
+/* #includes ================================================================ */
+#include <sys/types.h>
+
 /* structures =============================================================== */
 typedef struct process {
     pid_t pid;
