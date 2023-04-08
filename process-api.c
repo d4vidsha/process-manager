@@ -10,7 +10,7 @@
 void send_message(process_t *process, char *message) {
     /*  Send a message to a process.
      */
-    if (write(process->to_process[1], message, BIG_ENDIAN_BYTES) == FAILED) {
+    if (write(process->fd[1], message, BIG_ENDIAN_BYTES) == FAILED) {
         perror("write");
         exit(EXIT_FAILURE);
     }
@@ -19,7 +19,7 @@ void send_message(process_t *process, char *message) {
 void receive_message(process_t *process, char *message, int length) {
     /*  Receive a message from a process.
      */
-    if (read(process->to_manager[0], message, length) == FAILED) {
+    if (read(process->parent_fd[0], message, length) == FAILED) {
         perror("read");
         exit(EXIT_FAILURE);
     }
@@ -111,11 +111,11 @@ char *terminate_process(process_t *process, char *simulation_time) {
     receive_message(process, string, SHA256_LENGTH);
 
     // close pipes
-    if (close(process->to_process[1]) == FAILED) {
+    if (close(process->fd[1]) == FAILED) {
         perror("close");
         exit(EXIT_FAILURE);
     }
-    if (close(process->to_manager[0]) == FAILED) {
+    if (close(process->parent_fd[0]) == FAILED) {
         perror("close");
         exit(EXIT_FAILURE);
     }

@@ -61,11 +61,11 @@ process_t *initialise_process(pcb_t *pcb) {
     pcb->process = process;
 
     // create pipes for communication with process
-    if (pipe(process->to_process) == FAILED) {
+    if (pipe(process->fd) == FAILED) {
         perror("pipe");
         exit(EXIT_FAILURE);
     }
-    if (pipe(process->to_manager) == FAILED) {
+    if (pipe(process->parent_fd) == FAILED) {
         perror("pipe");
         exit(EXIT_FAILURE);
     }
@@ -78,29 +78,29 @@ process_t *initialise_process(pcb_t *pcb) {
 
     case 0:
         // child process
-        if (close(process->to_process[1]) == FAILED) {
+        if (close(process->fd[1]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }
-        if (close(process->to_manager[0]) == FAILED) {
+        if (close(process->parent_fd[0]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }
 
         // redirect stdin and stdout to pipes
-        if (dup2(process->to_process[0], STDIN_FILENO) == FAILED) {
+        if (dup2(process->fd[0], STDIN_FILENO) == FAILED) {
             perror("dup2");
             exit(EXIT_FAILURE);
         }
-        if (dup2(process->to_manager[1], STDOUT_FILENO) == FAILED) {
+        if (dup2(process->parent_fd[1], STDOUT_FILENO) == FAILED) {
             perror("dup2");
             exit(EXIT_FAILURE);
         }
-        if (close(process->to_process[0]) == FAILED) {
+        if (close(process->fd[0]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }
-        if (close(process->to_manager[1]) == FAILED) {
+        if (close(process->parent_fd[1]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }
@@ -114,11 +114,11 @@ process_t *initialise_process(pcb_t *pcb) {
 
     default:
         // parent process
-        if (close(process->to_process[0]) == FAILED) {
+        if (close(process->fd[0]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }
-        if (close(process->to_manager[1]) == FAILED) {
+        if (close(process->parent_fd[1]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
         }

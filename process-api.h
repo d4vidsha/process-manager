@@ -7,8 +7,8 @@
 /* structures =============================================================== */
 typedef struct process {
     pid_t pid;
-    int to_process[2];
-    int to_manager[2];
+    int fd[2];
+    int parent_fd[2];
 } process_t;
 
 /* function prototypes ====================================================== */
