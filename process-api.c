@@ -62,7 +62,10 @@ void suspend_process(process_t *process, char *simulation_time) {
 
     // suspend process
     int wstatus;
-    kill(process->pid, SIGTSTP);
+    if (kill(process->pid, SIGTSTP) == FAILED) {
+        perror("kill");
+        exit(EXIT_FAILURE);
+    }
     pid_t w = waitpid(process->pid, &wstatus, WUNTRACED);
     if (w == FAILED) {
         perror("waitpid");
@@ -85,7 +88,10 @@ void continue_process(process_t *process, char *simulation_time) {
     send_message(process, simulation_time);
 
     // continue process
-    kill(process->pid, SIGCONT);
+    if (kill(process->pid, SIGCONT) == FAILED) {
+        perror("kill");
+        exit(EXIT_FAILURE);
+    }
 
     // check that the process was continue correctly
     check_process(process, simulation_time);
@@ -103,7 +109,10 @@ char *terminate_process(process_t *process, char *simulation_time) {
     send_message(process, simulation_time);
 
     // terminate process
-    kill(process->pid, SIGTERM);
+    if (kill(process->pid, SIGTERM) == FAILED) {
+        perror("kill");
+        exit(EXIT_FAILURE);
+    }
 
     // read 64 byte string from stdout of process executable
     char *string = (char *)calloc(SHA256_LENGTH + 1, sizeof(char));
