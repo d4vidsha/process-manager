@@ -6,11 +6,14 @@
 #include <arpa/inet.h>
 #include "main.h"
 
-const char *const SCHEDULERS[] = {"SJF", "RR", NULL};
-const char *const MEMORY_METHODS[] = {"infinite", "best-fit", NULL};
+// possible arguments
+const char *const SCHEDULERS[] = {SJF, RR, NULL};
+const char *const MEMORY_METHODS[] = {INFINITE, BESTFIT, NULL};
 const char *const QUANTUMS[] = {"1", "2", "3", NULL};
 
 int main(int argc, char *argv[]) {
+    /*  Main function. Parse arguments and run simulation.
+     */
 
     // read in flags and arguments
     args_t *args = parse_args(argc, argv);
@@ -23,7 +26,7 @@ int main(int argc, char *argv[]) {
     process_manager(args);
     free(args);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void process_manager(args_t *args) {
@@ -49,7 +52,7 @@ void process_manager(args_t *args) {
     size_t len = 0;
     ssize_t read;
     pcb_t *pcb;
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while ((read = getline(&line, &len, fp)) != FAILED) {
         pcb = create_pcb(line);
         append(submitted_pcbs, pcb);
     }
@@ -120,16 +123,16 @@ void run_cycle(cycle_t *c) {
 
     // move processes from the input queue to the ready queue upon
     // successful memory allocation
-    if (strcmp(c->args->memory, "infinite") == 0) {
+    if (strcmp(c->args->memory, INFINITE) == 0) {
         infinite(c);
-    } else if (strcmp(c->args->memory, "best-fit") == 0) {
+    } else if (strcmp(c->args->memory, BESTFIT) == 0) {
         bestfit(c);
     }
 
     // determine the process that will run in this cycle
-    if (strcmp(c->args->scheduler, "SJF") == 0) {
+    if (strcmp(c->args->scheduler, SJF) == 0) {
         sjf(c);
-    } else if (strcmp(c->args->scheduler, "RR") == 0) {
+    } else if (strcmp(c->args->scheduler, RR) == 0) {
         rr(c);
     }
 }
@@ -169,7 +172,7 @@ void manage_termination(cycle_t *c) {
     }
 
     // deallocate memory if using best-fit
-    if (strcmp(c->args->memory, "best-fit") == 0) {
+    if (strcmp(c->args->memory, BESTFIT) == 0) {
         mm_free(c->memory, pcb->memory);
         pcb->memory = NULL;
     }
@@ -555,7 +558,7 @@ char *read_flag(char *flag, const char *const *valid_args, int argc,
                     j++;
                 }
                 printf("\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
         }
     }

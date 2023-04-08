@@ -61,21 +61,20 @@ process_t *initialise_process(pcb_t *pcb) {
     pcb->process = process;
 
     // create pipes for communication
-    if (pipe(process->to_process) == -1) {
+    if (pipe(process->to_process) == FAILED) {
         perror("pipe");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
-    if (pipe(process->to_manager) == -1) {
+    if (pipe(process->to_manager) == FAILED) {
         perror("pipe");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // use fork to create a new process
     switch (process->pid = fork()) {
-    case -1:
-        // error
+    case FAILED:
         perror("fork");
-        exit(1);
+        exit(EXIT_FAILURE);
 
     case 0:
         // child process

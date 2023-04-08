@@ -10,7 +10,7 @@
 void send_message(process_t *process, char *message) {
     /*  Send a message to a process.
      */
-    if (write(process->to_process[1], message, BIG_ENDIAN_BYTES) == -1) {
+    if (write(process->to_process[1], message, BIG_ENDIAN_BYTES) == FAILED) {
         perror("write");
         exit(EXIT_FAILURE);
     }
@@ -19,7 +19,7 @@ void send_message(process_t *process, char *message) {
 void receive_message(process_t *process, char *message, int length) {
     /*  Receive a message from a process.
      */
-    if (read(process->to_manager[0], message, length) == -1) {
+    if (read(process->to_manager[0], message, length) == FAILED) {
         perror("read");
         exit(EXIT_FAILURE);
     }
@@ -64,7 +64,7 @@ void suspend_process(process_t *process, char *simulation_time) {
     int wstatus;
     kill(process->pid, SIGTSTP);
     pid_t w = waitpid(process->pid, &wstatus, WUNTRACED);
-    if (w == -1) {
+    if (w == FAILED) {
         perror("waitpid");
         exit(EXIT_FAILURE);
     }

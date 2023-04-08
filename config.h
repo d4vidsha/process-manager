@@ -7,6 +7,13 @@
 #define FALSE 0
 #define FAILED -1
 
+/*  Arguments
+ */
+#define SJF "SJF"
+#define RR "RR"
+#define INFINITE "infinite"
+#define BESTFIT "best-fit"
+
 /*  Separator for parsing input files.
  */
 #define SEPARATOR " "
