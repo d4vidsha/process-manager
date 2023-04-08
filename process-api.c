@@ -66,15 +66,12 @@ void suspend_process(process_t *process, char *simulation_time) {
         perror("kill");
         exit(EXIT_FAILURE);
     }
-    pid_t w = waitpid(process->pid, &wstatus, WUNTRACED);
-    if (w == FAILED) {
-        perror("waitpid");
-        exit(EXIT_FAILURE);
-    }
-    if (!WIFSTOPPED(wstatus)) {
-        printf("Error: Process did not stop.\n");
-        exit(EXIT_FAILURE);
-    }
+    do {
+        if (waitpid(process->pid, &wstatus, WUNTRACED) == FAILED) {
+            perror("waitpid");
+            exit(EXIT_FAILURE);
+        }
+    } while (!WIFSTOPPED(wstatus));
 }
 
 void continue_process(process_t *process, char *simulation_time) {
