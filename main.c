@@ -78,7 +78,7 @@ void run_cycles(list_t *process_table, args_t *args) {
     copy_list(process_table, c->submitted_queue);
 
     // on each cycle
-    while (TRUE) {
+    while (list_len(c->finished_queue) < total_processes) {
         if (DEBUG) {
             printf("%" PRIu32 "\n", c->simulation_time);
             printf("   memory: ");
@@ -94,19 +94,13 @@ void run_cycles(list_t *process_table, args_t *args) {
             printf(" finished: ");
             print_list(c->finished_queue, print_pcb);
         }
-
         run_cycle(c);
 
-        // when the finished queue contains all processes, the process manager
-        // can terminate
-        if (list_len(c->finished_queue) == total_processes) {
-            break;
+        // increment simulation time if not finished with all processes
+        if (list_len(c->finished_queue) < total_processes) {
+            c->simulation_time += c->quantum;
         }
-
-        c->simulation_time += c->quantum;
     }
-
-    // print performance statistics
     print_performance_statistics(c);
     free_cycle(c);
 }
@@ -304,6 +298,7 @@ void sjf(cycle_t *c) {
         choose the process whose name comes first lexicographically
      */
     if (c->running_queue->head == NULL) {
+
         // only add process to running queue if there is no running process
         node_t *curr = c->ready_queue->head;
         node_t *min = curr;
@@ -324,23 +319,26 @@ void sjf(cycle_t *c) {
             curr = curr->next;
         }
 
-        // provided there exists a process with the shortest service
-        // time, add it to the running queue
-        if (min) {
-            pcb_t *pcb = (pcb_t *)min->data;
-            if (DEBUG) {
-                printf("ACTION: Adding process %s to running queue\n",
-                       pcb->name);
-            }
-            printf("%" PRIu32 ",RUNNING,process_name=%s,remaining_time=%" PRIu32
-                   "\n",
-                   c->simulation_time, pcb->name, pcb->remaining_time);
-            move_data(min->data, c->ready_queue, c->running_queue);
-            pcb->state = RUNNING;
-            // task4: start process
-            big_endian(c->simulation_time, c->big_endian);
-            start_process(pcb->process, c->big_endian);
+        // check if there is a process to add to the running queue
+        if (!min) {
+            return;
         }
+
+        // add process to running queue
+        pcb_t *pcb = (pcb_t *)min->data;
+        if (DEBUG) {
+            printf("ACTION: Adding process %s to running queue\n", pcb->name);
+        }
+        printf("%" PRIu32 ",RUNNING,process_name=%s,remaining_time=%" PRIu32
+               "\n",
+               c->simulation_time, pcb->name, pcb->remaining_time);
+        move_data(min->data, c->ready_queue, c->running_queue);
+        pcb->state = RUNNING;
+
+        // task4: start process
+        big_endian(c->simulation_time, c->big_endian);
+        start_process(pcb->process, c->big_endian);
+
     } else {
         // if there is a process currently running, continue to run
         // task4: continue process
@@ -380,6 +378,7 @@ void rr(cycle_t *c) {
             }
             move_data(pcb, c->running_queue, c->ready_queue);
             pcb->state = SUSPENDED;
+
             // task4: suspend process
             big_endian(c->simulation_time, c->big_endian);
             suspend_process(pcb->process, c->big_endian);
@@ -395,6 +394,7 @@ void rr(cycle_t *c) {
                "\n",
                c->simulation_time, pcb->name, pcb->remaining_time);
         move_data(pcb, c->ready_queue, c->running_queue);
+
         // task4: start process or resume process
         big_endian(c->simulation_time, c->big_endian);
         if (pcb->state == READY) {
