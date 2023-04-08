@@ -60,7 +60,7 @@ process_t *initialise_process(pcb_t *pcb) {
     assert(process);
     pcb->process = process;
 
-    // create pipes for communication
+    // create pipes for communication with process
     if (pipe(process->to_process) == FAILED) {
         perror("pipe");
         exit(EXIT_FAILURE);
@@ -78,21 +78,50 @@ process_t *initialise_process(pcb_t *pcb) {
 
     case 0:
         // child process
-        close(process->to_process[1]);
-        close(process->to_manager[0]);
+        if (close(process->to_process[1]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
+        if (close(process->to_manager[0]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
 
         // redirect stdin and stdout to pipes
-        dup2(process->to_process[0], STDIN_FILENO);
-        dup2(process->to_manager[1], STDOUT_FILENO);
+        if (dup2(process->to_process[0], STDIN_FILENO) == FAILED) {
+            perror("dup2");
+            exit(EXIT_FAILURE);
+        }
+        if (dup2(process->to_manager[1], STDOUT_FILENO) == FAILED) {
+            perror("dup2");
+            exit(EXIT_FAILURE);
+        }
+        if (close(process->to_process[0]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
+        if (close(process->to_manager[1]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
 
         // execute process executable
         char *cmd[] = {"./process", pcb->name, NULL};
-        execvp(cmd[0], cmd);
+        if (execvp(cmd[0], cmd) == FAILED) {
+            perror("execvp");
+            exit(EXIT_FAILURE);
+        }
 
     default:
         // parent process
-        close(process->to_process[0]);
-        close(process->to_manager[1]);
+        if (close(process->to_process[0]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
+        if (close(process->to_manager[1]) == FAILED) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
     }
     return process;
 }

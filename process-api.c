@@ -110,6 +110,16 @@ char *terminate_process(process_t *process, char *simulation_time) {
     assert(string);
     receive_message(process, string, SHA256_LENGTH);
 
+    // close pipes
+    if (close(process->to_process[1]) == FAILED) {
+        perror("close");
+        exit(EXIT_FAILURE);
+    }
+    if (close(process->to_manager[0]) == FAILED) {
+        perror("close");
+        exit(EXIT_FAILURE);
+    }
+
     // free process
     free(process);
 
