@@ -271,11 +271,11 @@ void bestfit(cycle_t *c) {
         // try to allocate memory
         pcb->memory = (block_t *)mm_malloc(c->memory, pcb->memory_size);
         if (!pcb->memory) {
+            // memory allocation failed, skip to next process
             continue;
         }
 
-        // if memory was successfully allocated, move the process to the ready
-        // queue
+        // memory was successfully allocated, move process to ready queue
         if (DEBUG) {
             printf("ACTION: Process %s successfully allocated "
                    "memory\n",
@@ -363,7 +363,7 @@ void rr(cycle_t *c) {
         that is currently running continues to run.
      */
     if (c->ready_queue->head == NULL) {
-        // let the process continue to run
+        // let the currently runnning process continue to run
         // task4: continue process
         if (c->running_queue->head != NULL) {
             pcb_t *pcb = (pcb_t *)c->running_queue->head->data;
