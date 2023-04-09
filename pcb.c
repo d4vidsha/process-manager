@@ -76,8 +76,7 @@ process_t *initialise_process(pcb_t *pcb) {
         perror("fork");
         exit(EXIT_FAILURE);
 
-    case 0:
-        // child process
+    case 0: // child process
         if (close(process->fd[1]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
@@ -112,8 +111,7 @@ process_t *initialise_process(pcb_t *pcb) {
             exit(EXIT_FAILURE);
         }
 
-    default:
-        // parent process
+    default: // parent process
         if (close(process->fd[0]) == FAILED) {
             perror("close");
             exit(EXIT_FAILURE);
@@ -122,6 +120,7 @@ process_t *initialise_process(pcb_t *pcb) {
             perror("close");
             exit(EXIT_FAILURE);
         }
+        // all other file descriptors close from `terminate_process()`
     }
     return process;
 }
