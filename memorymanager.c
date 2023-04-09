@@ -28,12 +28,16 @@ block_t *mm_malloc(list_t *memory, uint16_t size) {
     /*  Allocate memory of size `size` to the process.
         The memory manager will find the best fit block and allocate it.
         If there is no free block that can fit the process, return NULL.
+
+        If there are two or more best fit blocks, the memory manager will
+        allocate the block with the smallest address, i.e. leftmost block.
     */
     // find the best fit block
     block_t *min = NULL;
     for (node_t *curr = memory->head; curr; curr = curr->next) {
         block_t *block = (block_t *)curr->data;
-        if (block->status == FREE && block->size >= size) {
+        if (block->status == FREE && block->size >= size &&
+            (!min || block->size < min->size)) {
             min = block;
         }
     }
