@@ -12,7 +12,7 @@ typedef struct process {
 } process_t;
 
 /* function prototypes ====================================================== */
-void send_message(process_t *process, char *message);
+void send_message(process_t *process, char *message, int length);
 void receive_message(process_t *process, char *message, int length);
 void check_process(process_t *process, char *simulation_time);
 void start_process(process_t *process, char *simulation_time);

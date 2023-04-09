@@ -7,10 +7,10 @@
 #include "config.h"
 #include "process-api.h"
 
-void send_message(process_t *process, char *message) {
+void send_message(process_t *process, char *message, int length) {
     /*  Send a message to a process.
      */
-    if (write(process->fd[1], message, BIG_ENDIAN_BYTES) == FAILED) {
+    if (write(process->fd[1], message, length) == FAILED) {
         perror("write");
         exit(EXIT_FAILURE);
     }
@@ -48,7 +48,7 @@ void start_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
-    send_message(process, simulation_time);
+    send_message(process, simulation_time, BIG_ENDIAN_BYTES);
 
     // check that the process was started correctly
     check_process(process, simulation_time);
@@ -58,7 +58,7 @@ void suspend_process(process_t *process, char *simulation_time) {
     /*  Send a simulation time as a message to a process. Then
         suspend the process by sending a SIGTSTP signal.
      */
-    send_message(process, simulation_time);
+    send_message(process, simulation_time, BIG_ENDIAN_BYTES);
 
     // suspend process
     int wstatus;
@@ -82,7 +82,7 @@ void continue_process(process_t *process, char *simulation_time) {
         that the least significant bit of the message is the same
         as the output from the process executable.
      */
-    send_message(process, simulation_time);
+    send_message(process, simulation_time, BIG_ENDIAN_BYTES);
 
     // continue process
     if (kill(process->pid, SIGCONT) == FAILED) {
@@ -103,7 +103,7 @@ char *terminate_process(process_t *process, char *simulation_time) {
 
         Return the string and free the process.
      */
-    send_message(process, simulation_time);
+    send_message(process, simulation_time, BIG_ENDIAN_BYTES);
 
     // terminate process
     if (kill(process->pid, SIGTERM) == FAILED) {
