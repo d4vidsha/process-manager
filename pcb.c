@@ -106,7 +106,7 @@ process_t *initialise_process(pcb_t *pcb) {
         }
 
         // execute process executable
-        char *cmd[] = {"./process", pcb->name, NULL};
+        char *cmd[] = {PROCESS_EXECUTABLE, pcb->name, NULL};
         if (execvp(cmd[0], cmd) == FAILED) {
             perror("execvp");
             exit(EXIT_FAILURE);

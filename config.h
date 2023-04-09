@@ -32,6 +32,10 @@
  */
 #define IMPLEMENTS_REAL_PROCESS
 
+/*  Process executable file name.
+ */
+#define PROCESS_EXECUTABLE "./process"
+
 /*  Number of Big Endian bytes.
  */
 #define BIG_ENDIAN_BYTES 4
