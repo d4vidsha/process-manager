@@ -1,4 +1,4 @@
-# COMP30023 2023 Project 1
+# Process Manager
 
 In this project, we implement a _process manager_ capable of allocating memory to processes and scheduling them for execution. The process scheduling and memory allocation are simulated. There is a _challenge task_ that requires controlling real processes and relies on interprocess communication system calls such as `pipe`, `fork`, `dup2` and `exec`. We will assume only one process is running at a time, i.e. a single-core CPU. 
 
@@ -10,8 +10,8 @@ Both the memory manager and the process queues are implemented as linked lists. 
 - `process`: used to simulate real processes
 - `linkedlist`: implementation for any data type
 - `memorymanager`: the memory manager API
-- `pcb.c`: the process control block API
-- `process-api.c`: API that controls `process`
+- `pcb`: the process control block API
+- `process-api`: API that controls `process`
 
 ## How to compile
 
@@ -52,3 +52,7 @@ Copy and paste any or all commands into the terminal to run the test cases. No o
 ./allocate -f cases/task1/simple.txt -s SJF -m infinite -q 1 | diff - cases/task1/simple-sjf.out
 ./allocate -f cases/task2/two-processes.txt -s RR -m infinite -q 3 | diff - cases/task2/two-processes-3.out
 ```
+
+## About
+
+This project is part of the course [Computer Systems](https://handbook.unimelb.edu.au/2023/subjects/comp30023) at the University of Melbourne.
