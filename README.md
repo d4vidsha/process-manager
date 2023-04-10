@@ -8,7 +8,7 @@ Both the memory manager and the process queues are implemented as linked lists. 
 
 - `main`: the main program including the process manager
 - `process`: used to simulate real processes
-- `linkedlist`: implementation for any data type
+- `linkedlist`: implementation for storing any data type
 - `memorymanager`: the memory manager API
 - `pcb`: the process control block API
 - `process-api`: API that controls `process`
