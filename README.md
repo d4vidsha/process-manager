@@ -1,6 +1,6 @@
 # COMP30023 2023 Project 1
 
-In this project, we implement a _process manager_ capable of allocating memory to proesses and scheduling them for execution. The process scheduling and memory allocation are simulated. There is a _challenge task_ that requires controlling real processes. We will assume only one process is running at a time, i.e. a single-core CPU.
+In this project, we implement a _process manager_ capable of allocating memory to processes and scheduling them for execution. The process scheduling and memory allocation are simulated. There is a _challenge task_ that requires controlling real processes. We will assume only one process is running at a time, i.e. a single-core CPU.
 
 ## How to run
 
