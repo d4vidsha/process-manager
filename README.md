@@ -2,6 +2,21 @@
 
 In this project, we implement a _process manager_ capable of allocating memory to proesses and scheduling them for execution. The process scheduling and memory allocation are simulated. There is a _challenge task_ that requires controlling real processes. We will assume only one process is running at a time, i.e. a single-core CPU.
 
+## How to run
+
+```bash
+make            # compile the main program
+make process    # compile process executable, used to simulate real processes
+./allocate -f <file> -s <scheduler> -m <memory> -q <quantum>
+```
+
+### Options
+
+- `-f <file>`: the file containing the processes to be managed
+- `-s <scheduler>`: the scheduler to use. Can be `SJF` or `RR`
+- `-m <memory>`: the memory allocation algorithm to use. Can be `infinite` or `best-fit`
+- `-q <quantum>`: the quantum of each cycle
+
 ## Test cases
 
 ```bash
