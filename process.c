@@ -192,7 +192,7 @@ void read_store_dword(Op op, uint8_t hash_content[128], size_t* dest_index) {
 
 	if (verbose_flag) {
 		fprintf(stderr,
-				"[process.c (%ld)] op %d, time %d, hex bytes [%02x, %02x, "
+				"[process.c (%ld)] op %d, time %u, hex bytes [%02x, %02x, "
 				"%02x, %02x]\n",
 				pid, op,
 				((uint32_t)buf[1]) << 24 | ((uint32_t)buf[2]) << 16 |
