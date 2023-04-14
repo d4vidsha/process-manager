@@ -1,3 +1,14 @@
+/* =============================================================================
+   pcb.c
+
+   The implementation of process control blocks. This file contains the
+   API required to manage a process control block. We use process control
+   blocks to represent states of processes in the system. Multiple
+   PCBs make up a process table or process queue, both of which are stored
+   as linked lists.
+
+   Author: David Sha
+============================================================================= */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -124,7 +135,3 @@ process_t *initialise_process(pcb_t *pcb) {
     }
     return process;
 }
-
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

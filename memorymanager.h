@@ -1,3 +1,11 @@
+/* =============================================================================
+   memorymanager.h
+
+   The implementation of the memory manager. This file contains the
+   block struct which is used to represent a memory block.
+
+   Author: David Sha
+============================================================================= */
 #ifndef _MEMORYMANAGER_H_
 #define _MEMORYMANAGER_H_
 
@@ -21,6 +29,3 @@ void mm_free(list_t *memory, block_t *block);
 void print_block(void *data);
 
 #endif
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

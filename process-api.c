@@ -1,3 +1,11 @@
+/* =============================================================================
+   process-api.c
+
+   This file is used to interact with the ./process executable. It contains
+   functions to send and receive messages to and from a process using pipes.
+
+   Author: David Sha
+============================================================================= */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -131,7 +139,3 @@ char *terminate_process(process_t *process, char *simulation_time) {
 
     return string;
 }
-
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

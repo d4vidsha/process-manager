@@ -1,3 +1,14 @@
+/* =============================================================================
+   linkedlist.h
+
+   Linked list implementation that allows any data type to be stored.
+
+   Reference:
+   - Implementation of linked list structs inspired by Artem Polyvyanyy from
+     ass2-soln-2020.c.
+
+   Author: David Sha
+============================================================================= */
 #ifndef _LINKEDLIST_H_
 #define _LINKEDLIST_H_
 
@@ -34,6 +45,3 @@ int cmp_addr(void *a, void *b);
 void copy_list(list_t *from, list_t *to);
 
 #endif
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

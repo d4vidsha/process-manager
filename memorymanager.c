@@ -1,3 +1,12 @@
+/* =============================================================================
+   memorymanager.c
+
+   The implementation of the memory manager. This file contains the
+   API required to manage the memory. The memory manager is implemented
+   as a linked list of memory blocks.
+
+   Author: David Sha
+============================================================================= */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -119,7 +128,3 @@ void print_block(void *data) {
     printf("%s-%d-%d", block->status == FREE ? "FREED" : "ALLOC",
            block->location, block->size);
 }
-
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

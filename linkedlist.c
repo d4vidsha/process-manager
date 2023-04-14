@@ -1,3 +1,16 @@
+/* =============================================================================
+   linkedlist.c
+
+   Linked list implementation that allows any data type to be stored.
+
+   Reference:
+   - Originally written for COMP20003 Assignment 2, 2022, altered to fit
+     this project.
+   - Implementation of linked list functions inspired by Alistair Moffat
+     from "Programming, Problem Solving, and Abstraction with C".
+
+   Author: David Sha
+============================================================================= */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -261,13 +274,3 @@ void copy_list(list_t *from, list_t *to) {
         append(to, data);
     }
 }
-
-/* =============================================================================
-   Written by David Sha.
-   - Originally written for COMP20003 Assignment 2, 2022, altered to fit
-     this project.
-   - Implementation of linked list structs inspired by Artem Polyvyanyy from
-     ass2-soln-2020.c.
-   - Implementation of linked list functions inspired by Alistair Moffat
-     from "Programming, Problem Solving, and Abstraction with C".
-============================================================================= */

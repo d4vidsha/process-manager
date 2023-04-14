@@ -1,3 +1,11 @@
+/* =============================================================================
+   main.c
+
+   The implementation of the process manager. This file also contains
+   the main function that parses the arguments and runs the simulation.
+
+   Author: David Sha
+============================================================================= */
 #include <assert.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -586,7 +594,3 @@ void big_endian(uint32_t value, char *big_endian) {
     value = htonl(value);
     memcpy(big_endian, &value, sizeof(value));
 }
-
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

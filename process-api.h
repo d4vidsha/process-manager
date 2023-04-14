@@ -1,3 +1,11 @@
+/* =============================================================================
+   process-api.h
+
+   The process struct is used to represent a child process when this program
+   is executed.
+
+   Author: David Sha
+============================================================================= */
 #ifndef _PROCESS_API_H_
 #define _PROCESS_API_H_
 
@@ -21,6 +29,3 @@ void continue_process(process_t *process, char *simulation_time);
 char *terminate_process(process_t *process, char *simulation_time);
 
 #endif
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

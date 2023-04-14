@@ -1,3 +1,11 @@
+/* =============================================================================
+   pcb.h
+
+   This file contains the pcb struct which is used to represent a state
+   of a process.
+
+   Author: David Sha
+============================================================================= */
 #ifndef _PCB_H_
 #define _PCB_H_
 
@@ -26,6 +34,3 @@ void print_pcb(void *data);
 process_t *initialise_process(pcb_t *pcb);
 
 #endif
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */

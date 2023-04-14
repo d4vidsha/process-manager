@@ -1,3 +1,12 @@
+/* =============================================================================
+   main.h
+
+   The implementation of the process manager. This file contains the
+   cycle struct, which is used to manage the simulation cycles, and
+   the arguments struct which is used to store the command line arguments.
+
+   Author: David Sha
+============================================================================= */
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
@@ -52,6 +61,3 @@ args_t *parse_args(int argc, char *argv[]);
 void big_endian(uint32_t value, char *big_endian);
 
 #endif
-/* =============================================================================
-   Written by David Sha.
-============================================================================= */
