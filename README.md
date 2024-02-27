@@ -52,7 +52,3 @@ Copy and paste any or all commands into the terminal to run the test cases. No o
 ./allocate -f tests/task1/simple.txt -s SJF -m infinite -q 1 | diff - tests/task1/simple-sjf.out
 ./allocate -f tests/task2/two-processes.txt -s RR -m infinite -q 3 | diff - tests/task2/two-processes-3.out
 ```
-
-## About
-
-This project is part of the course [Computer Systems](https://handbook.unimelb.edu.au/2023/subjects/comp30023) at the University of Melbourne.
